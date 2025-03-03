@@ -1,7 +1,7 @@
 {
-  "name": "jrgcomponents",
-  "version": "0.0.195",
-  "description": "Components developed by Jameson R Grieve for use in React/NextJS projects.",
+  "name": "@jgrieve/zod2gql",
+  "version": "0.0.0",
+  "description": "Convert Zod schemas to GraphQL queries.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
