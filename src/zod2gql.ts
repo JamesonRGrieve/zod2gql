@@ -19,39 +19,38 @@ z.ZodObject.prototype.zodToGraphQL = function (depth = 0, maxDepth = 10): string
   const shape = this._def.shape();
 
   for (const [key, value] of Object.entries(shape)) {
-    // Handle ZodObject
-    if (value instanceof z.ZodObject) {
-      query += `${indent}${key} {\n${value.zodToGraphQL(depth + 1, maxDepth)}${indent}}\n`;
-    }
-    // Handle ZodArray with proper expansion of nested types
-    else if (value instanceof z.ZodArray) {
-      const elementType = value._def.type;
-      if (elementType instanceof z.ZodObject) {
-        query += `${indent}${key} {\n${elementType.zodToGraphQL(depth + 1, maxDepth)}${indent}}\n`;
-      } else {
-        query += `${indent}${key}\n`;
+    // Process the schema based on its type
+    const processSchema = (schema, fieldName) => {
+      // Handle ZodObject
+      if (schema instanceof z.ZodObject) {
+        query += `${indent}${fieldName} {\n${schema.zodToGraphQL(depth + 1, maxDepth)}${indent}}\n`;
       }
-    }
-    // Handle ZodOptional and ZodNullable by unwrapping them
-    else if (value instanceof z.ZodOptional || value instanceof z.ZodNullable) {
-      const innerType = value._def.innerType;
-      if (innerType instanceof z.ZodObject) {
-        query += `${indent}${key} {\n${innerType.zodToGraphQL(depth + 1, maxDepth)}${indent}}\n`;
-      } else if (innerType instanceof z.ZodArray) {
-        const arrayElementType = innerType._def.type;
-        if (arrayElementType instanceof z.ZodObject) {
-          query += `${indent}${key} {\n${arrayElementType.zodToGraphQL(depth + 1, maxDepth)}${indent}}\n`;
-        } else {
-          query += `${indent}${key}\n`;
-        }
-      } else {
-        query += `${indent}${key}\n`;
+      // Handle ZodArray with proper expansion of nested types
+      else if (schema instanceof z.ZodArray) {
+        const elementType = schema._def.type;
+        processSchema(elementType, fieldName);
       }
-    }
-    // Handle primitive types
-    else {
-      query += `${indent}${key}\n`;
-    }
+      // Handle ZodLazy - for circular references
+      else if (schema instanceof z.ZodLazy) {
+        const innerType = schema._def.getter();
+        processSchema(innerType, fieldName);
+      }
+      // Handle ZodOptional and ZodNullable by unwrapping them
+      else if (schema instanceof z.ZodOptional || schema instanceof z.ZodNullable) {
+        const innerType = schema._def.innerType;
+        processSchema(innerType, fieldName);
+      }
+      // Handle ZodUnion and ZodEnum
+      else if (schema instanceof z.ZodUnion || schema instanceof z.ZodEnum) {
+        query += `${indent}${fieldName}\n`;
+      }
+      // Handle primitive types
+      else {
+        query += `${indent}${fieldName}\n`;
+      }
+    };
+
+    processSchema(value, key);
   }
 
   return query;
