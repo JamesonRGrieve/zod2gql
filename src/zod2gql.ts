@@ -90,7 +90,5 @@ z.ZodObject.prototype.toGQL = function (
     queryField = queryField.charAt(0).toLowerCase() + queryField.slice(1);
   }
 
-  const fields = this.zodToGraphQL(2);
-
-  return `${queryType}${operation}${varsString} {\n  ${queryField}${fieldArgs} {\n${fields}  }\n}`;
+  return `${queryType}${operation}${varsString} {\n  ${queryField}${fieldArgs} {\n${this.zodToGraphQL(2)}  }\n}`;
 };
