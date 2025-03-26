@@ -12,7 +12,9 @@ declare module 'zod' {
 }
 
 z.ZodObject.prototype.zodToGraphQL = function (depth = 0, maxDepth = 10): string {
-  if (depth > maxDepth) return '';
+  if (depth > maxDepth) {
+    return '';
+  }
 
   const indent = '  '.repeat(depth);
   let query = '';
@@ -69,8 +71,12 @@ z.ZodObject.prototype.toGQL = function (
         .map(([key, value]) => {
           // Determine the type based on the value
           let type = 'String';
-          if (typeof value === 'number') type = 'Int';
-          if (typeof value === 'boolean') type = 'Boolean';
+          if (typeof value === 'number') {
+            type = 'Int';
+          }
+          if (typeof value === 'boolean') {
+            type = 'Boolean';
+          }
           return `$${key}: ${type}!`;
         })
         .join(', ')})`
