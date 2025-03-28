@@ -27,7 +27,7 @@ const userResponseSchema = z.object({
   name: z.string(),
   email: z.string(),
   createdAt: z.string(),
-});
+}).describe('UserResponse'); // Set schema name for field inference
 
 const mutation = createMutation(userResponseSchema, {
   operationName: 'CreateUser',
@@ -41,7 +41,7 @@ const mutation = createMutation(userResponseSchema, {
 console.log(mutation);
 /* Output:
 mutation CreateUser($name: String!, $email: String!, $password: String!) {
-  createUser(name: $name, email: $email, password: $password) {
+  userResponse(name: $name, email: $email, password: $password) {
     id
     name
     email
@@ -69,7 +69,7 @@ const userResponseSchema = z.object({
   name: z.string(),
   email: z.string(),
   createdAt: z.string(),
-});
+}).describe('User'); // Set schema name using describe()
 
 // Bulk create users mutation
 const mutation = z.array(userResponseSchema).toGQL(GQLType.Mutation, {
@@ -142,7 +142,7 @@ const userResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
-});
+}).describe('User');
 
 const mutation = createMutation(userResponseSchema, {
   operationName: 'CreateUser',
@@ -184,7 +184,7 @@ const addressSchema = z.object({
   street: z.string(),
   city: z.string(),
   zipCode: z.string(),
-});
+}).describe('Address');
 
 const createUserResponseSchema = z.object({
   id: z.string(),
@@ -192,7 +192,7 @@ const createUserResponseSchema = z.object({
   email: z.string(),
   address: addressSchema,
   createdAt: z.string(),
-});
+}).describe('User');
 
 const mutation = createMutation(createUserResponseSchema, {
   operationName: 'CreateUser',
@@ -245,7 +245,7 @@ const postSchema = z.object({
   title: z.string(),
   content: z.string(),
   published: z.boolean(),
-});
+}).describe('Post');
 
 const mutation = createMutation(postSchema, {
   operationName: 'UpdatePost',
@@ -286,7 +286,7 @@ const createPostResponseSchema = z.object({
   content: z.string(),
   tags: z.array(z.string()),
   createdAt: z.string(),
-});
+}).describe('Post');
 
 const mutation = createMutation(createPostResponseSchema, {
   operationName: 'CreatePost',
@@ -330,7 +330,7 @@ const userResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
-});
+}).describe('User');
 
 const mutation = createMutation(userResponseSchema, {
   operationName: 'CreateUser',

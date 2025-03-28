@@ -68,7 +68,7 @@ const userSchema = z.object({
   email: z.string(),
   age: z.number(),
   isActive: z.boolean(),
-});
+}).describe('User'); // Set the schema name for field inference
 
 // Generate a GraphQL query
 const query = createQuery(userSchema, {
@@ -91,6 +91,43 @@ query GetUser($id: String!) {
   `}
 />
 
+## Setting Schema Names with describe()
+
+The `.describe()` method is the preferred way to set a schema name for field name inference:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createQuery } from 'zod2gql';
+
+// Define a schema with a name using describe()
+const productSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+}).describe('Product'); // This sets the name for field inference
+
+// The operation field name "product" will be inferred from the description
+const query = createQuery(productSchema, {
+  variables: { id: '123' }
+});
+
+console.log(query);
+/* Output:
+query($id: String!) {
+  product(id: $id) {
+    id
+    name
+    price
+  }
+}
+*/
+  `}
+/>
+
 ## Array Schemas with Automatic Pluralization
 
 One of the powerful features of `zod2gql` is its ability to handle array schemas and automatically pluralize field names:
@@ -103,12 +140,12 @@ One of the powerful features of `zod2gql` is its ability to handle array schemas
 import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 
-// Define a Zod schema
+// Define a Zod schema with a name
 const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
-});
+}).describe('User'); // Using describe() to set the schema name
 
 // Create an array schema version for listing users
 const usersQuery = z.array(userSchema).toGQL(GQLType.Query, {
@@ -192,64 +229,5 @@ const usersQuery = z.array(userSchema).toGQL(GQLType.Query, {
 const bulkCreateMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
   variables: { users: [{name: 'John'}, {name: 'Jane'}] }
 });
-  `}
-/>
-
-## Schema Type Names
-
-To enable automatic operation field name inference, you can add a type name to your Zod schema:
-
-<Source
-  language="typescript"
-  dark
-  format={true}
-  code={`
-// Helper function to add a type name
-const withTypeName = (schema, name) => {
-  (schema as any)._def.typeName = name;
-  return schema;
-};
-
-// Add a type name to your schema
-const userSchema = withTypeName(
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    email: z.string()
-  }),
-  'User'
-);
-
-// The operation field name "user" will be inferred
-const query = createQuery(userSchema, {
-  variables: { id: '123' }
-});
-
-console.log(query);
-/* Output:
-query($id: String!) {
-  user(id: $id) {
-    id
-    name
-    email
-  }
-}
-*/
-
-// For array schemas, the field name "user" will be automatically pluralized to "users"
-const usersQuery = z.array(userSchema).toGQL(GQLType.Query, {
-  variables: { limit: 10 }
-});
-
-console.log(usersQuery);
-/* Output:
-query($limit: Int!) {
-  users(limit: $limit) {
-    id
-    name
-    email
-  }
-}
-*/
   `}
 />

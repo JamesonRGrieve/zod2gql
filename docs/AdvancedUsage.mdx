@@ -11,9 +11,9 @@ import { processSubscription } from '../src/subscription';
 
 Discover advanced techniques and features of `zod2gql` to handle complex GraphQL generation scenarios.
 
-## Type Name Inference
+## Schema Name Inference with describe()
 
-You can add a type name to your Zod schema to enable automatic field name inference:
+The preferred way to set a schema name for field name inference is using the `describe()` method:
 
 <Source
   language="typescript"
@@ -23,23 +23,14 @@ You can add a type name to your Zod schema to enable automatic field name infere
 import { z } from 'zod';
 import { createQuery } from 'zod2gql';
 
-// Helper function to add a type name to a schema
-const withTypeName = (schema, name) => {
-  (schema as any)._def.typeName = name;
-  return schema;
-};
+// Create a schema with a name using describe()
+const productSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+}).describe('Product'); // This is the preferred way to set the schema name
 
-// Create a schema with a type name
-const productSchema = withTypeName(
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    price: z.number(),
-  }),
-  'Product'
-);
-
-// No need to specify operationName - it will be inferred from the type name
+// No need to specify operationName - it will be inferred from the schema description
 const query = createQuery(productSchema, {
   variables: { id: 'prod123' }
 });
@@ -69,15 +60,12 @@ The library automatically pluralizes field names when working with array schemas
 import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 
-// Create a schema with a type name
-const productSchema = withTypeName(
-  z.object({
-    id: z.string(),
-    name: z.string(),
-    price: z.number(),
-  }),
-  'Product'
-);
+// Create a schema with a name using describe()
+const productSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  price: z.number(),
+}).describe('Product'); // Set schema name with describe()
 
 // Create an array schema for querying multiple products
 const productsQuery = z.array(productSchema).toGQL(GQLType.Query, {
@@ -140,10 +128,10 @@ For complex schemas with circular references or deep nesting, you can control th
   format={true}
   code={`
 // Define a schema with circular references
-const categorySchema = withTypeName(z.object({
+const categorySchema = z.object({
   id: z.string(),
   name: z.string(),
-}), 'Category');
+}).describe('Category'); // Set schema name with describe()
 
 // Self-referential through lazy() for parent/child relationships
 categorySchema.extend({
@@ -175,7 +163,7 @@ For mutations with complex input types, you can provide detailed type mappings:
 import { z } from 'zod';
 import { createMutation } from 'zod2gql';
 
-const orderResponseSchema = withTypeName(z.object({
+const orderResponseSchema = z.object({
   id: z.string(),
   status: z.string(),
   items: z.array(z.object({
@@ -184,7 +172,7 @@ const orderResponseSchema = withTypeName(z.object({
     price: z.number()
   })),
   total: z.number()
-}), 'Order');
+}).describe('Order'); // Set schema name with describe()
 
 const mutation = createMutation(orderResponseSchema, {
   operationName: 'CreateOrder',
@@ -221,13 +209,13 @@ Array schemas are particularly useful for batch operations:
 import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 
-// Define user schema
-const userSchema = withTypeName(z.object({
+// Define user schema with describe()
+const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
   isActive: z.boolean(),
-}), 'User');
+}).describe('User');
 
 // Batch create users
 const batchCreateMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
@@ -275,12 +263,12 @@ import { createQuery } from 'zod2gql';
 import { useQuery } from '@apollo/client';
 import { gql } from 'graphql-tag';
 
-// Define your schema
+// Define your schema with describe()
 const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string()
-});
+}).describe('User');
 
 // Generate the query
 const USER_QUERY = createQuery(userSchema, {
@@ -322,13 +310,13 @@ import { GQLType } from 'zod2gql';
 import { useQuery, useMutation } from '@apollo/client';
 import { gql } from 'graphql-tag';
 
-// Define user schema
-const userSchema = withTypeName(z.object({
+// Define user schema with describe()
+const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
   isActive: z.boolean(),
-}), 'User');
+}).describe('User');
 
 // Generate a users list query
 const USERS_QUERY = z.array(userSchema).toGQL(GQLType.Query, {
@@ -405,8 +393,8 @@ z.ZodObject.prototype.toGQL = function(
   options = {},
   depth = 0
 ) {
-  // Special handling for schemas with a specific type name
-  if ((this as any)._def.typeName === 'CustomType' && depth === 0) {
+  // Special handling for schemas with a specific description
+  if (this.description === 'CustomType' && depth === 0) {
     // Custom field generation logic
     const fields = customFieldGenerator(this);
     return \`\${queryType} \${options.operationName || ''}(...) {\n  \${fields}\n}\`;
@@ -435,26 +423,27 @@ You can compose multiple schemas for more complex operations:
 import { z } from 'zod';
 import { createQuery } from 'zod2gql';
 
-const userSchema = withTypeName(z.object({
+// Define schemas with describe()
+const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string()
-}), 'User');
+}).describe('User');
 
-const postSchema = withTypeName(z.object({
+const postSchema = z.object({
   id: z.string(),
   title: z.string(),
   content: z.string()
-}), 'Post');
+}).describe('Post');
 
-const profileSchema = withTypeName(z.object({
+const profileSchema = z.object({
   user: userSchema,
   recentPosts: z.array(postSchema),
   stats: z.object({
     postCount: z.number(),
     followersCount: z.number()
   })
-}), 'Profile');
+}).describe('Profile');
 
 const query = createQuery(profileSchema, {
   operationName: 'GetUserProfile',

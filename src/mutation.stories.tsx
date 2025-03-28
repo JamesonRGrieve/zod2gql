@@ -18,12 +18,6 @@ import { createMutation } from './mutation';
 import './index';
 import './mutation';
 
-// Add a name to a Zod object schema for type inference testing
-const withTypeName = (schema: z.ZodObject<any>, name: string): z.ZodObject<any> => {
-  (schema as any)._def.typeName = name;
-  return schema;
-};
-
 // Component to display GQL mutation
 const MutationDisplay = ({
   schema,
@@ -82,91 +76,84 @@ type Story = StoryObj<typeof MutationDisplay>;
 // ========== SCHEMA DEFINITIONS ==========
 
 // Basic schemas
-const addressSchema = withTypeName(
-  z.object({
+const addressSchema = z
+  .object({
     street: z.string(),
     city: z.string(),
     state: z.string(),
     zipCode: z.string(),
     country: z.string().optional(),
-  }),
-  'Address',
-);
+  })
+  .describe('Address');
 
 // Response schemas
-const createUserResponseSchema = withTypeName(
-  z.object({
+const createUserResponseSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
     createdAt: z.string(),
-  }),
-  'CreateUserResponse',
-);
+  })
+  .describe('CreateUserResponse');
 
-const updateUserResponseSchema = withTypeName(
-  z.object({
+const updateUserResponseSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
     age: z.number().optional(),
     isActive: z.boolean().optional(),
     updatedAt: z.string(),
-  }),
-  'UpdateUserResponse',
-);
+  })
+  .describe('UpdateUserResponse');
 
-const userSchema = withTypeName(
-  z.object({
+const userSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
     age: z.number().optional(),
     isActive: z.boolean().optional(),
     address: addressSchema.optional(),
-  }),
-  'User',
-);
+  })
+  .describe('User');
 
 // Post schemas
-const createPostResponseSchema = withTypeName(
-  z.object({
+const createPostResponseSchema = z
+  .object({
     id: z.string(),
     title: z.string(),
     content: z.string(),
     authorId: z.string(),
     published: z.boolean(),
     createdAt: z.string(),
-  }),
-  'CreatePostResponse',
-);
+  })
+  .describe('CreatePostResponse');
 
-const updatePostResponseSchema = withTypeName(
-  z.object({
+const updatePostResponseSchema = z
+  .object({
     id: z.string(),
     title: z.string().optional(),
     content: z.string().optional(),
     published: z.boolean().optional(),
     updatedAt: z.string(),
-  }),
-  'UpdatePostResponse',
-);
+  })
+  .describe('UpdatePostResponse');
 
 // Comment schemas
-const createCommentResponseSchema = withTypeName(
-  z.object({
+const createCommentResponseSchema = z
+  .object({
     id: z.string(),
     text: z.string(),
     authorId: z.string(),
     postId: z.string(),
     createdAt: z.string(),
-  }),
-  'CreateCommentResponse',
-);
+  })
+  .describe('CreateCommentResponse');
 
 // Complex schemas
-const productSchema = withTypeName(
-  z.object({
+const productSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     description: z.string(),
@@ -176,21 +163,19 @@ const productSchema = withTypeName(
     stockQuantity: z.number(),
     isAvailable: z.boolean(),
     createdAt: z.string(),
-  }),
-  'Product',
-);
+  })
+  .describe('Product');
 
-const orderItemSchema = withTypeName(
-  z.object({
+const orderItemSchema = z
+  .object({
     productId: z.string(),
     quantity: z.number(),
     unitPrice: z.number(),
-  }),
-  'OrderItem',
-);
+  })
+  .describe('OrderItem');
 
-const createOrderResponseSchema = withTypeName(
-  z.object({
+const createOrderResponseSchema = z
+  .object({
     id: z.string(),
     customerId: z.string(),
     items: z.array(orderItemSchema),
@@ -199,9 +184,8 @@ const createOrderResponseSchema = withTypeName(
     shippingAddressId: z.string(),
     billingAddressId: z.string(),
     createdAt: z.string(),
-  }),
-  'CreateOrderResponse',
-);
+  })
+  .describe('CreateOrderResponse');
 
 // ========== STORY TESTS ==========
 
@@ -218,7 +202,7 @@ export const CreateUserMutation: Story = {
       },
     },
     expectedOutput: `mutation CreateUser($name: String!, $email: String!, $password: String!) {
-  createUser(name: $name, email: $email, password: $password) {
+  createUserResponse(name: $name, email: $email, password: $password) {
     id
     name
     email
@@ -262,7 +246,7 @@ export const BulkCreateUsersMutation: Story = {
       },
     },
     expectedOutput: `mutation($users: [UserInput!]!) {
-  createUsers(users: $users) {
+  createUserResponses(users: $users) {
     id
     name
     email
@@ -331,7 +315,7 @@ export const UpdateUserMutation: Story = {
       },
     },
     expectedOutput: `mutation UpdateUser($id: String!, $name: String!, $email: String!, $isActive: Boolean!) {
-  updateUser(id: $id, name: $name, email: $email, isActive: $isActive) {
+  updateUserResponse(id: $id, name: $name, email: $email, isActive: $isActive) {
     id
     name
     email
@@ -357,7 +341,7 @@ export const CreatePostMutation: Story = {
       },
     },
     expectedOutput: `mutation CreatePost($title: String!, $content: String!, $authorId: String!, $published: Boolean!) {
-  createPost(title: $title, content: $content, authorId: $authorId, published: $published) {
+  createPostResponse(title: $title, content: $content, authorId: $authorId, published: $published) {
     id
     title
     content
@@ -392,7 +376,7 @@ export const BulkCreatePostsMutation: Story = {
       },
     },
     expectedOutput: `mutation($posts: [PostsInput!]!) {
-  createPosts(posts: $posts) {
+  createPostResponses(posts: $posts) {
     id
     title
     content
@@ -417,7 +401,7 @@ export const UpdatePostMutation: Story = {
       },
     },
     expectedOutput: `mutation UpdatePost($id: String!, $title: String!, $published: Boolean!) {
-  updatePost(id: $id, title: $title, published: $published) {
+  updatePostResponse(id: $id, title: $title, published: $published) {
     id
     title
     content
@@ -441,7 +425,7 @@ export const CreateCommentMutation: Story = {
       },
     },
     expectedOutput: `mutation CreateComment($text: String!, $postId: String!, $authorId: String!) {
-  createComment(text: $text, postId: $postId, authorId: $authorId) {
+  createCommentResponse(text: $text, postId: $postId, authorId: $authorId) {
     id
     text
     authorId
@@ -472,7 +456,7 @@ export const CreateProductWithInputTypes: Story = {
       },
     },
     expectedOutput: `mutation CreateProduct($productInput: ProductInput!) {
-  createProduct(productInput: $productInput) {
+  product(productInput: $productInput) {
     id
     name
     description
@@ -519,7 +503,7 @@ export const CreateOrderWithNestedInput: Story = {
       },
     },
     expectedOutput: `mutation CreateOrder($order: OrderInput!) {
-  createOrder(order: $order) {
+  createOrderResponse(order: $order) {
     id
     customerId
     items {
@@ -556,7 +540,7 @@ export const UpdateProductWithMultipleInputs: Story = {
       },
     },
     expectedOutput: `mutation UpdateProduct($id: String!, $productData: ProductDataInput!, $stockData: StockDataInput!) {
-  updateProduct(id: $id, productData: $productData, stockData: $stockData) {
+  product(id: $id, productData: $productData, stockData: $stockData) {
     id
     name
     description
@@ -621,7 +605,7 @@ export const LimitedDepthMutation: Story = {
       maxDepth: 3,
     },
     expectedOutput: `mutation CreateUser($userData: UserDataInput!) {
-  createUser(userData: $userData) {
+  user(userData: $userData) {
     id
     name
     email

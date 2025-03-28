@@ -48,6 +48,29 @@ interface ToGQLOptions {
 
 Configuration options for generating GraphQL operations.
 
+## Setting Schema Names
+
+### Using describe()
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+// Set a schema name using describe() method
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+}).describe('User');
+
+// The name 'User' will be used for field name inference
+// resulting in field name 'user' in GraphQL operations
+  `}
+/>
+
+The `describe()` method is the preferred way to set a schema name for field name inference.
+
 ## Extension Methods
 
 ### toGQL for ZodObject
@@ -153,7 +176,7 @@ function getOperationFieldName(
   `}
 />
 
-Utility function to infer a GraphQL field name from a schema or operation name. If the schema is an array or isArray is true, the field name will be pluralized.
+Utility function to infer a GraphQL field name from a schema or operation name. It uses the schema's description (set via `.describe()`) to determine the field name. If the schema is an array or isArray is true, the field name will be pluralized.
 
 ### pluralize
 
@@ -265,7 +288,7 @@ const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string()
-});
+}).describe('User'); // Set schema name using describe()
 
 const query = createQuery(userSchema, {
   operationName: 'GetUser',
@@ -297,7 +320,7 @@ const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string()
-});
+}).describe('User'); // Set schema name using describe()
 
 // Using array schema for automatic pluralization
 const query = z.array(userSchema).toGQL(GQLType.Query, {
@@ -329,7 +352,7 @@ const userResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string()
-});
+}).describe('User');
 
 const mutation = createMutation(userResponseSchema, {
   operationName: 'CreateUser',
@@ -366,7 +389,7 @@ const userResponseSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string()
-});
+}).describe('User'); // Set schema name using describe()
 
 // Bulk create users mutation with automatic pluralization
 const mutation = z.array(userResponseSchema).toGQL(GQLType.Mutation, {
@@ -413,7 +436,7 @@ const notificationSchema = z.object({
       bio: z.string()
     })
   })
-});
+}).describe('Notification');
 
 const subscription = createSubscription(notificationSchema, {
   operationName: 'SubscribeNotifications',
@@ -423,7 +446,7 @@ const subscription = createSubscription(notificationSchema, {
 
 // Result:
 // subscription SubscribeNotifications($userId: String!) {
-//   notifications(userId: $userId) {
+//   notification(userId: $userId) {
 //     id
 //     message
 //     user {
@@ -454,7 +477,7 @@ const userPresenceSchema = z.object({
   name: z.string(),
   status: z.enum(['online', 'away', 'offline']),
   lastSeen: z.string()
-});
+}).describe('UserPresence'); // Set schema name using describe()
 
 // Subscribe to multiple users in a room with automatic pluralization
 const subscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {

@@ -9,12 +9,6 @@ import { createQuery } from './query';
 import './index';
 import './query';
 
-// Add a name to a Zod object schema for type inference testing
-const withTypeName = (schema: z.ZodObject<any>, name: string): z.ZodObject<any> => {
-  (schema as any)._def.typeName = name;
-  return schema;
-};
-
 // Component to display GQL query
 const QueryDisplay = ({
   schema,
@@ -73,44 +67,41 @@ type Story = StoryObj<typeof QueryDisplay>;
 // ========== SCHEMA DEFINITIONS ==========
 
 // Basic schemas
-const addressSchema = withTypeName(
-  z.object({
+const addressSchema = z
+  .object({
     street: z.string(),
     city: z.string(),
     state: z.string(),
     zipCode: z.string(),
     country: z.string().optional(),
-  }),
-  'Address',
-);
+  })
+  .describe('Address');
 
-const userSchema = withTypeName(
-  z.object({
+const userSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
     age: z.number(),
     isActive: z.boolean(),
     address: addressSchema.optional(),
-  }),
-  'User',
-);
+  })
+  .describe('User');
 
 // Nested schemas
-const commentSchema = withTypeName(
-  z.object({
+const commentSchema = z
+  .object({
     id: z.string(),
     text: z.string(),
     author: userSchema,
     createdAt: z.string(),
     likes: z.number(),
     replies: z.array(z.lazy(() => commentSchema)).optional(),
-  }),
-  'Comment',
-);
+  })
+  .describe('Comment');
 
-const postSchema = withTypeName(
-  z.object({
+const postSchema = z
+  .object({
     id: z.string(),
     title: z.string(),
     content: z.string(),
@@ -119,40 +110,36 @@ const postSchema = withTypeName(
     tags: z.array(z.string()),
     createdAt: z.string(),
     updatedAt: z.string().optional(),
-  }),
-  'Post',
-);
+  })
+  .describe('Post');
 
 // Complex schemas with multi-level nesting
-const permissionSchema = withTypeName(
-  z.object({
+const permissionSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     description: z.string().optional(),
-  }),
-  'Permission',
-);
+  })
+  .describe('Permission');
 
-const roleSchema = withTypeName(
-  z.object({
+const roleSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     permissions: z.array(permissionSchema),
-  }),
-  'Role',
-);
+  })
+  .describe('Role');
 
-const departmentSchema = withTypeName(
-  z.object({
+const departmentSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     description: z.string().optional(),
-  }),
-  'Department',
-);
+  })
+  .describe('Department');
 
-const employeeSchema = withTypeName(
-  z.object({
+const employeeSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     email: z.string(),
@@ -163,24 +150,22 @@ const employeeSchema = withTypeName(
     address: addressSchema,
     hireDate: z.string(),
     salary: z.number(),
-  }),
-  'Employee',
-);
+  })
+  .describe('Employee');
 
 // Complex schema with multiple circular references
-const categorySchema = withTypeName(
-  z.object({
+const categorySchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     description: z.string().optional(),
     parentCategory: z.lazy(() => categorySchema).optional(),
     subcategories: z.array(z.lazy(() => categorySchema)).optional(),
-  }),
-  'Category',
-);
+  })
+  .describe('Category');
 
-const productSchema = withTypeName(
-  z.object({
+const productSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     description: z.string(),
@@ -190,23 +175,21 @@ const productSchema = withTypeName(
     attributes: z.record(z.string(), z.union([z.string(), z.number(), z.boolean()])),
     stockQuantity: z.number(),
     isAvailable: z.boolean(),
-  }),
-  'Product',
-);
+  })
+  .describe('Product');
 
-const orderItemSchema = withTypeName(
-  z.object({
+const orderItemSchema = z
+  .object({
     id: z.string(),
     product: productSchema,
     quantity: z.number(),
     unitPrice: z.number(),
     totalPrice: z.number(),
-  }),
-  'OrderItem',
-);
+  })
+  .describe('OrderItem');
 
-const orderSchema = withTypeName(
-  z.object({
+const orderSchema = z
+  .object({
     id: z.string(),
     customer: userSchema,
     items: z.array(orderItemSchema),
@@ -217,45 +200,41 @@ const orderSchema = withTypeName(
     createdAt: z.string(),
     updatedAt: z.string().optional(),
     relatedOrders: z.array(z.lazy(() => orderSchema)).optional(),
-  }),
-  'Order',
-);
+  })
+  .describe('Order');
 
 // GraphQL schema with enums, unions, and other complex types
 const mediaTypeEnum = z.enum(['image', 'video', 'document']);
 
-const imageSchema = withTypeName(
-  z.object({
+const imageSchema = z
+  .object({
     url: z.string(),
     width: z.number(),
     height: z.number(),
     format: z.string(),
-  }),
-  'Image',
-);
+  })
+  .describe('Image');
 
-const videoSchema = withTypeName(
-  z.object({
+const videoSchema = z
+  .object({
     url: z.string(),
     duration: z.number(),
     format: z.string(),
     thumbnail: imageSchema.optional(),
-  }),
-  'Video',
-);
+  })
+  .describe('Video');
 
-const documentSchema = withTypeName(
-  z.object({
+const documentSchema = z
+  .object({
     url: z.string(),
     title: z.string(),
     fileSize: z.number(),
     fileType: z.string(),
-  }),
-  'Document',
-);
+  })
+  .describe('Document');
 
-const mediaSchema = withTypeName(
-  z.object({
+const mediaSchema = z
+  .object({
     id: z.string(),
     type: mediaTypeEnum,
     title: z.string(),
@@ -266,9 +245,8 @@ const mediaSchema = withTypeName(
     uploadedBy: userSchema,
     uploadedAt: z.string(),
     tags: z.array(z.string()).optional(),
-  }),
-  'Media',
-);
+  })
+  .describe('Media');
 
 // ========== STORY TESTS ==========
 

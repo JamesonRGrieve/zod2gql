@@ -18,12 +18,6 @@ import { createSubscription } from './subscription';
 import './index';
 import './subscription';
 
-// Add a name to a Zod object schema for type inference testing
-const withTypeName = (schema: z.ZodObject<any>, name: string): z.ZodObject<any> => {
-  (schema as any)._def.typeName = name;
-  return schema;
-};
-
 // Component to display GQL subscription
 const SubscriptionDisplay = ({
   schema,
@@ -82,8 +76,8 @@ type Story = StoryObj<typeof SubscriptionDisplay>;
 // ========== SCHEMA DEFINITIONS ==========
 
 // Basic schemas
-const userPresenceSchema = withTypeName(
-  z.object({
+const userPresenceSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     avatarUrl: z.string().optional(),
@@ -91,13 +85,12 @@ const userPresenceSchema = withTypeName(
     lastSeen: z.string(),
     typing: z.boolean().optional(),
     currentRoomId: z.string().optional(),
-  }),
-  'UserPresence',
-);
+  })
+  .describe('UserPresence');
 
 // Notification schemas
-const notificationSchema = withTypeName(
-  z.object({
+const notificationSchema = z
+  .object({
     id: z.string(),
     type: z.enum(['info', 'success', 'warning', 'error']),
     title: z.string(),
@@ -105,34 +98,31 @@ const notificationSchema = withTypeName(
     timestamp: z.string(),
     read: z.boolean(),
     userId: z.string(),
-  }),
-  'Notification',
-);
+  })
+  .describe('Notification');
 
 // Chat message schemas
-const messageAuthorSchema = withTypeName(
-  z.object({
+const messageAuthorSchema = z
+  .object({
     id: z.string(),
     name: z.string(),
     avatarUrl: z.string().optional(),
-  }),
-  'MessageAuthor',
-);
+  })
+  .describe('MessageAuthor');
 
-const chatAttachmentSchema = withTypeName(
-  z.object({
+const chatAttachmentSchema = z
+  .object({
     id: z.string(),
     url: z.string(),
     fileName: z.string(),
     fileType: z.string(),
     fileSize: z.number(),
     thumbnailUrl: z.string().optional(),
-  }),
-  'ChatAttachment',
-);
+  })
+  .describe('ChatAttachment');
 
-const chatMessageSchema = withTypeName(
-  z.object({
+const chatMessageSchema = z
+  .object({
     id: z.string(),
     content: z.string(),
     author: messageAuthorSchema,
@@ -142,13 +132,12 @@ const chatMessageSchema = withTypeName(
     reactions: z.record(z.string(), z.number()).optional(),
     attachments: z.array(chatAttachmentSchema).optional(),
     mentions: z.array(z.string()).optional(),
-  }),
-  'ChatMessage',
-);
+  })
+  .describe('ChatMessage');
 
 // Event tracking schemas
-const activityEventSchema = withTypeName(
-  z.object({
+const activityEventSchema = z
+  .object({
     id: z.string(),
     userId: z.string(),
     eventType: z.enum(['page_view', 'button_click', 'form_submit', 'error']),
@@ -159,13 +148,12 @@ const activityEventSchema = withTypeName(
     ipAddress: z.string().optional(),
     userAgent: z.string().optional(),
     sessionId: z.string(),
-  }),
-  'ActivityEvent',
-);
+  })
+  .describe('ActivityEvent');
 
 // Real-time data schemas
-const stockTickerSchema = withTypeName(
-  z.object({
+const stockTickerSchema = z
+  .object({
     symbol: z.string(),
     price: z.number(),
     change: z.number(),
@@ -176,12 +164,11 @@ const stockTickerSchema = withTypeName(
     high: z.number(),
     low: z.number(),
     previousClose: z.number(),
-  }),
-  'StockTicker',
-);
+  })
+  .describe('StockTicker');
 
-const sensorDataSchema = withTypeName(
-  z.object({
+const sensorDataSchema = z
+  .object({
     sensorId: z.string(),
     deviceId: z.string(),
     type: z.enum(['temperature', 'humidity', 'pressure', 'light', 'motion']),
@@ -197,22 +184,20 @@ const sensorDataSchema = withTypeName(
         altitude: z.number().optional(),
       })
       .optional(),
-  }),
-  'SensorData',
-);
+  })
+  .describe('SensorData');
 
 // Nested, complex subscription schema
-const commentReactionSchema = withTypeName(
-  z.object({
+const commentReactionSchema = z
+  .object({
     userId: z.string(),
     reactionType: z.enum(['like', 'love', 'laugh', 'wow', 'sad', 'angry']),
     timestamp: z.string(),
-  }),
-  'CommentReaction',
-);
+  })
+  .describe('CommentReaction');
 
-const commentEventSchema = withTypeName(
-  z.object({
+const commentEventSchema = z
+  .object({
     id: z.string(),
     postId: z.string(),
     eventType: z.enum(['created', 'updated', 'deleted', 'reaction_added', 'reaction_removed']),
@@ -230,11 +215,11 @@ const commentEventSchema = withTypeName(
         attachments: z.array(chatAttachmentSchema).optional(),
         mentions: z.array(z.string()).optional(),
       })
-      .optional(),
+      .optional()
+      .describe('Comment'),
     reaction: commentReactionSchema.optional(),
-  }),
-  'CommentEvent',
-);
+  })
+  .describe('CommentEvent');
 
 // ========== STORY TESTS ==========
 
@@ -348,7 +333,7 @@ export const UserNotificationsSubscription: Story = {
       variables: { userId: 'user123' },
     },
     expectedOutput: `subscription SubscribeUserNotifications($userId: String!) {
-  userNotifications(userId: $userId) {
+  notification(userId: $userId) {
     id
     type
     title
@@ -391,7 +376,7 @@ export const ChatRoomMessagesSubscription: Story = {
       variables: { roomId: 'room123' },
     },
     expectedOutput: `subscription SubscribeChatRoom($roomId: String!) {
-  chatRoom(roomId: $roomId) {
+  chatMessage(roomId: $roomId) {
     id
     content
     author {
@@ -468,7 +453,7 @@ export const ActivityEventsSubscription: Story = {
       variables: { userId: 'user123', sessionId: 'session456' },
     },
     expectedOutput: `subscription SubscribeActivityEvents($userId: String!, $sessionId: String!) {
-  activityEvents(userId: $userId, sessionId: $sessionId) {
+  activityEvent(userId: $userId, sessionId: $sessionId) {
     id
     userId
     eventType
@@ -606,7 +591,7 @@ export const LimitedDepthSubscription: Story = {
       maxDepth: 3,
     },
     expectedOutput: `subscription SubscribeCommentEvents($postId: String!) {
-  commentEvents(postId: $postId) {
+  commentEvent(postId: $postId) {
     id
     postId
     eventType
@@ -648,11 +633,13 @@ export const LimitedDepthSubscription: Story = {
 // Multiple simultaneous subscriptions
 export const MultipleSubscriptions: Story = {
   args: {
-    schema: z.object({
-      userPresence: userPresenceSchema,
-      notifications: notificationSchema,
-      chatMessages: chatMessageSchema,
-    }),
+    schema: z
+      .object({
+        userPresence: userPresenceSchema,
+        notifications: notificationSchema,
+        chatMessages: chatMessageSchema,
+      })
+      .describe('CombinedSubscription'),
     options: {
       operationName: 'MultiSubscription',
       variables: {
@@ -661,7 +648,7 @@ export const MultipleSubscriptions: Story = {
       },
     },
     expectedOutput: `subscription MultiSubscription($userId: String!, $roomId: String!) {
-  multiSubscription(userId: $userId, roomId: $roomId) {
+  combinedSubscription(userId: $userId, roomId: $roomId) {
     userPresence {
       id
       name

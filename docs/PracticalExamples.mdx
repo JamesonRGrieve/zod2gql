@@ -25,7 +25,7 @@ Real-world examples of using `zod2gql` in common scenarios.
 import { z } from 'zod';
 import { createQuery, createMutation, GQLType } from 'zod2gql';
 
-// Define user-related schemas
+// Define user-related schemas with describe() for field name inference
 const userSchema = z.object({
   id: z.string(),
   username: z.string(),
@@ -36,13 +36,13 @@ const userSchema = z.object({
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string().optional(),
-});
+}).describe('User');
 
 const loginResponseSchema = z.object({
   token: z.string(),
   refreshToken: z.string(),
   user: userSchema,
-});
+}).describe('LoginResponse');
 
 // Generate queries
 const getUserQuery = createQuery(userSchema, {
@@ -126,14 +126,14 @@ const usersStatusSubscription = z.array(userSchema).toGQL(GQLType.Subscription, 
 import { z } from 'zod';
 import { createQuery, createMutation, GQLType } from 'zod2gql';
 
-// Define schemas
+// Define schemas with describe() for field name inference
 const categorySchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
   description: z.string().optional(),
   parentId: z.string().optional(),
-});
+}).describe('Category');
 
 const reviewSchema = z.object({
   id: z.string(),
@@ -143,7 +143,7 @@ const reviewSchema = z.object({
   title: z.string().optional(),
   content: z.string(),
   createdAt: z.string(),
-});
+}).describe('Review');
 
 const productSchema = z.object({
   id: z.string(),
@@ -161,7 +161,7 @@ const productSchema = z.object({
   isActive: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
-});
+}).describe('Product');
 
 // Generate queries
 const getProductQuery = createQuery(productSchema, {
@@ -189,7 +189,7 @@ const getCategoryProductsQuery = createQuery(
       pageSize: z.number(),
       hasMore: z.boolean(),
     }),
-  }),
+  }).describe('CategoryProducts'),
   {
     operationName: 'GetCategoryProducts',
     variables: { 
@@ -272,7 +272,7 @@ const productsInventorySubscription = z.array(
     productId: z.string(),
     inventory: z.number(),
     updatedAt: z.string()
-  })
+  }).describe('ProductInventory')
 ).toGQL(GQLType.Subscription, {
   variables: {
     categoryId: '$categoryId'
@@ -290,19 +290,19 @@ const productsInventorySubscription = z.array(
 import { z } from 'zod';
 import { createQuery, createMutation, createSubscription, GQLType } from 'zod2gql';
 
-// Define schemas
+// Define schemas with describe() for field name inference
 const authorSchema = z.object({
   id: z.string(),
   name: z.string(),
   bio: z.string().optional(),
   avatarUrl: z.string().optional(),
-});
+}).describe('Author');
 
 const tagSchema = z.object({
   id: z.string(),
   name: z.string(),
   slug: z.string(),
-});
+}).describe('Tag');
 
 const commentSchema = z.object({
   id: z.string(),
@@ -313,7 +313,7 @@ const commentSchema = z.object({
   updatedAt: z.string().optional(),
   isEdited: z.boolean().default(false),
   likes: z.number().default(0),
-});
+}).describe('Comment');
 
 const postSchema = z.object({
   id: z.string(),
@@ -331,7 +331,7 @@ const postSchema = z.object({
   readingTime: z.number().optional(),
   viewCount: z.number().default(0),
   likeCount: z.number().default(0),
-});
+}).describe('Post');
 
 // Generate queries
 const getPostQuery = createQuery(postSchema, {
@@ -433,7 +433,7 @@ const postUpdateSubscription = createSubscription(postSchema, {
 import { z } from 'zod';
 import { createQuery, createMutation, createSubscription, GQLType } from 'zod2gql';
 
-// Define schemas
+// Define schemas with describe() for field name inference
 const userPresenceSchema = z.object({
   userId: z.string(),
   username: z.string(),
@@ -441,7 +441,7 @@ const userPresenceSchema = z.object({
   lastSeen: z.string(),
   typing: z.boolean().default(false),
   activeChannelId: z.string().optional(),
-});
+}).describe('UserPresence');
 
 const messageAttachmentSchema = z.object({
   id: z.string(),
@@ -450,7 +450,7 @@ const messageAttachmentSchema = z.object({
   title: z.string().optional(),
   size: z.number().optional(),
   mimeType: z.string().optional(),
-});
+}).describe('MessageAttachment');
 
 const messageSchema = z.object({
   id: z.string(),
@@ -464,7 +464,7 @@ const messageSchema = z.object({
   isEdited: z.boolean().default(false),
   reactions: z.record(z.string(), z.number()).optional(),
   mentions: z.array(z.string()).optional(),
-});
+}).describe('Message');
 
 const channelSchema = z.object({
   id: z.string(),
@@ -474,7 +474,7 @@ const channelSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string().optional(),
   lastMessageAt: z.string().optional(),
-});
+}).describe('Channel');
 
 // Generate queries
 const getChannelsQuery = z.array(channelSchema).toGQL(GQLType.Query, {
@@ -560,7 +560,7 @@ const typingIndicatorSubscription = createSubscription(
     username: z.string(),
     channelId: z.string(),
     typing: z.boolean()
-  }),
+  }).describe('TypingIndicator'),
   {
     operationName: 'OnTypingIndicator',
     variables: { channelId: '$channelId' }

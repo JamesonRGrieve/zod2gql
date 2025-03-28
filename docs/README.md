@@ -12,10 +12,11 @@
 
 - 🚀 **Simple API**: Extend Zod schemas with `.toGQL()` method
 - 🔄 **All Operation Types**: Support for queries, mutations, and subscriptions
+- 📚 **Array Schema Support**: Automatic field name pluralization for array schemas
 - 🧩 **Complex Schema Support**: Handles nested objects, arrays, circular references, enums, and more
 - 🔍 **Fully Type-Safe**: Written in TypeScript with complete type definitions
 - 🛠️ **Customizable**: Control operation names, variables, input types, and recursion depth
-- 🧠 **Intelligent**: Can infer operation field names from schema type names
+- 🧠 **Intelligent**: Can infer operation field names from schema descriptions
 - ⚡ **Lightweight**: Zero dependencies beyond Zod itself
 
 ## Installation
@@ -38,13 +39,13 @@ import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 import 'zod2gql/query'; // Import the extension
 
-// Define a Zod schema
+// Define a Zod schema with a name using describe()
 const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string(),
   age: z.number(),
-});
+}).describe('User'); // Set schema name for field inference
 
 // Generate a GraphQL query
 const query = userSchema.toGQL(GQLType.Query, {
@@ -64,6 +65,41 @@ query GetUser($id: String!) {
 }
 */
 ```
+
+## Array Schemas with Automatic Pluralization
+
+`zod2gql` supports array schemas with automatic field name pluralization:
+
+```tsx
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+import 'zod2gql/query'; // Import the extension
+
+// Define a Zod schema with a name using describe()
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+}).describe('User');
+
+// Generate a query for multiple users with automatic pluralization
+const usersQuery = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { limit: 10, offset: 0 }
+});
+
+console.log(usersQuery);
+/*
+query($limit: Int!, $offset: Int!) {
+  users(limit: $limit, offset: $offset) {
+    id
+    name
+    email
+  }
+}
+*/
+```
+
+Notice how the field name is automatically pluralized from "user" to "users" when using an array schema.
 
 ## Helper Functions
 
@@ -94,16 +130,15 @@ const subscription = createSubscription(userSchema, {
 
 ## Operation Name Inference
 
-zod2gql can infer the operation field name from the schema's type name if available:
+zod2gql can infer the operation field name from the schema's description:
 
 ```tsx
-// Add a type name to your schema
+// Add a name to your schema using describe()
 const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   email: z.string()
-});
-(userSchema as any)._def.typeName = 'User';
+}).describe('User');
 
 // The operation field name "user" will be inferred
 const query = createQuery(userSchema, {
@@ -114,6 +149,22 @@ console.log(query);
 /*
 query($id: String!) {
   user(id: $id) {
+    id
+    name
+    email
+  }
+}
+*/
+
+// For array schemas, the field name is automatically pluralized
+const usersQuery = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { limit: 10 }
+});
+
+console.log(usersQuery);
+/*
+query($limit: Int!) {
+  users(limit: $limit) {
     id
     name
     email
@@ -131,14 +182,14 @@ const addressSchema = z.object({
   street: z.string(),
   city: z.string(),
   zipCode: z.string()
-});
+}).describe('Address');
 
 const userSchema = z.object({
   id: z.string(),
   name: z.string(),
   address: addressSchema,
   friends: z.array(z.lazy(() => userSchema))
-});
+}).describe('User');
 
 const query = createQuery(userSchema, {
   operationName: 'GetUser',
@@ -174,6 +225,35 @@ const mutation = createMutation(userSchema, {
 });
 ```
 
+## Bulk Operations with Array Schemas
+
+For bulk mutations, array schemas are particularly useful:
+
+```tsx
+const bulkCreateMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    users: [
+      { name: 'John', email: 'john@example.com' },
+      { name: 'Jane', email: 'jane@example.com' }
+    ]
+  },
+  inputTypeMap: {
+    users: '[UserInput!]'
+  }
+});
+
+console.log(bulkCreateMutation);
+/*
+mutation($users: [UserInput!]!) {
+  createUsers(users: $users) {
+    id
+    name
+    email
+  }
+}
+*/
+```
+
 ## API Reference
 
 ### Core Types
@@ -197,6 +277,13 @@ interface ToGQLOptions {
 
 ```tsx
 // Extension method added to ZodObject
+toGQL(
+  queryType?: GQLType,
+  options?: ToGQLOptions,
+  depth?: number
+): string;
+
+// Extension method added to ZodArray
 toGQL(
   queryType?: GQLType,
   options?: ToGQLOptions,

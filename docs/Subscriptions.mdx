@@ -28,7 +28,7 @@ const notificationSchema = z.object({
   message: z.string(),
   timestamp: z.string(),
   read: z.boolean(),
-});
+}).describe('Notification'); // Set schema name for field inference
 
 const subscription = createSubscription(notificationSchema, {
   operationName: 'SubscribeUserNotifications',
@@ -38,7 +38,7 @@ const subscription = createSubscription(notificationSchema, {
 console.log(subscription);
 /* Output:
 subscription SubscribeUserNotifications($userId: String!) {
-  userNotifications(userId: $userId) {
+  notification(userId: $userId) {
     id
     type
     message
@@ -67,7 +67,7 @@ const userPresenceSchema = z.object({
   name: z.string(),
   status: z.enum(['online', 'away', 'offline']),
   lastSeen: z.string(),
-});
+}).describe('UserPresence'); // Set schema name using describe()
 
 // Subscribe to multiple users' presence
 const subscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {
@@ -132,7 +132,7 @@ const userPresenceSchema = z.object({
   status: z.enum(['online', 'away', 'offline']),
   lastSeen: z.string(),
   typing: z.boolean(),
-});
+}).describe('UserPresence');
 
 const subscription = createSubscription(userPresenceSchema, {
   operationName: 'SubscribeUserPresence',
@@ -167,7 +167,7 @@ const messageAuthorSchema = z.object({
   id: z.string(),
   name: z.string(),
   avatarUrl: z.string().optional(),
-});
+}).describe('MessageAuthor');
 
 const chatMessageSchema = z.object({
   id: z.string(),
@@ -177,7 +177,7 @@ const chatMessageSchema = z.object({
   roomId: z.string(),
   edited: z.boolean().default(false),
   reactions: z.record(z.string(), z.number()).optional(),
-});
+}).describe('ChatMessage');
 
 const subscription = createSubscription(chatMessageSchema, {
   operationName: 'SubscribeChatRoom',
@@ -187,7 +187,7 @@ const subscription = createSubscription(chatMessageSchema, {
 console.log(subscription);
 /* Output:
 subscription SubscribeChatRoom($roomId: String!) {
-  chatRoom(roomId: $roomId) {
+  chatMessage(roomId: $roomId) {
     id
     content
     author {
@@ -228,7 +228,7 @@ const commentEventSchema = z.object({
     }),
     createdAt: z.string(),
   }).optional(),
-});
+}).describe('CommentEvent');
 
 const subscription = createSubscription(commentEventSchema, {
   operationName: 'SubscribeCommentEvents',
@@ -238,7 +238,7 @@ const subscription = createSubscription(commentEventSchema, {
 console.log(subscription);
 /* Output:
 subscription SubscribeCommentEvents($postId: String!) {
-  commentEvents(postId: $postId) {
+  commentEvent(postId: $postId) {
     id
     postId
     eventType
@@ -271,7 +271,7 @@ const combinedSchema = z.object({
   userPresence: userPresenceSchema,
   notifications: notificationSchema,
   chatMessages: chatMessageSchema,
-});
+}).describe('MultiSubscription');
 
 const subscription = createSubscription(combinedSchema, {
   operationName: 'MultiSubscription',
@@ -336,7 +336,7 @@ const subscription = createSubscription(chatMessageSchema, {
 console.log(subscription);
 /* Output:
 subscription SubscribeChatRoom($roomId: String!) {
-  chatRoom(roomId: $roomId) {
+  chatMessage(roomId: $roomId) {
     id
     content
     author
