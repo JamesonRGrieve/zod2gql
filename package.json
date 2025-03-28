@@ -1,6 +1,6 @@
 {
   "name": "zod2gql",
-  "version": "0.0.0",
+  "version": "0.0.1",
   "description": "Convert Zod schemas to GraphQL queries.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
