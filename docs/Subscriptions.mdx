@@ -1,0 +1,298 @@
+import { ArgsTable, Canvas, Description, Meta, Source, Story } from '@storybook/addon-docs';
+import { z } from 'zod';
+import { GQLType } from '../src/index';
+import { createSubscription } from '../src/subscription';
+import * as SubscriptionStories from '../src/subscription.stories';
+
+<Meta title="Documentation/Subscriptions" of={SubscriptionStories} />
+
+# GraphQL Subscriptions
+
+Learn how to generate GraphQL subscriptions from Zod schemas using `zod2gql`.
+
+## Basic Subscription Generation
+
+Create a simple GraphQL subscription using the `createSubscription` helper function:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createSubscription } from 'zod2gql';
+
+const notificationSchema = z.object({
+  id: z.string(),
+  type: z.string(),
+  message: z.string(),
+  timestamp: z.string(),
+  read: z.boolean(),
+});
+
+const subscription = createSubscription(notificationSchema, {
+  operationName: 'SubscribeUserNotifications',
+  variables: { userId: 'user123' }
+});
+
+console.log(subscription);
+/* Output:
+subscription SubscribeUserNotifications($userId: String!) {
+  userNotifications(userId: $userId) {
+    id
+    type
+    message
+    timestamp
+    read
+  }
+}
+*/
+  `}
+/>
+
+## Real-time Data Subscriptions
+
+Subscriptions are often used for real-time data updates:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const userPresenceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.enum(['online', 'away', 'offline']),
+  lastSeen: z.string(),
+  typing: z.boolean(),
+});
+
+const subscription = createSubscription(userPresenceSchema, {
+  operationName: 'SubscribeUserPresence',
+  variables: { roomId: 'room123' }
+});
+
+console.log(subscription);
+/* Output:
+subscription SubscribeUserPresence($roomId: String!) {
+  userPresence(roomId: $roomId) {
+    id
+    name
+    status
+    lastSeen
+    typing
+  }
+}
+*/
+  `}
+/>
+
+## Complex Data Structures in Subscriptions
+
+Subscriptions can handle complex nested data structures:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const messageAuthorSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  avatarUrl: z.string().optional(),
+});
+
+const chatMessageSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  author: messageAuthorSchema,
+  timestamp: z.string(),
+  roomId: z.string(),
+  edited: z.boolean().default(false),
+  reactions: z.record(z.string(), z.number()).optional(),
+});
+
+const subscription = createSubscription(chatMessageSchema, {
+  operationName: 'SubscribeChatRoom',
+  variables: { roomId: 'room123' }
+});
+
+console.log(subscription);
+/* Output:
+subscription SubscribeChatRoom($roomId: String!) {
+  chatRoom(roomId: $roomId) {
+    id
+    content
+    author {
+      id
+      name
+      avatarUrl
+    }
+    timestamp
+    roomId
+    edited
+    reactions
+  }
+}
+*/
+  `}
+/>
+
+## Event-Based Subscriptions
+
+Subscriptions are perfect for event-based data:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const commentEventSchema = z.object({
+  id: z.string(),
+  postId: z.string(),
+  eventType: z.enum(['created', 'updated', 'deleted', 'reaction_added']),
+  timestamp: z.string(),
+  comment: z.object({
+    id: z.string(),
+    content: z.string(),
+    author: z.object({
+      id: z.string(),
+      name: z.string()
+    }),
+    createdAt: z.string(),
+  }).optional(),
+});
+
+const subscription = createSubscription(commentEventSchema, {
+  operationName: 'SubscribeCommentEvents',
+  variables: { postId: 'post123' }
+});
+
+console.log(subscription);
+/* Output:
+subscription SubscribeCommentEvents($postId: String!) {
+  commentEvents(postId: $postId) {
+    id
+    postId
+    eventType
+    timestamp
+    comment {
+      id
+      content
+      author {
+        id
+        name
+      }
+      createdAt
+    }
+  }
+}
+*/
+  `}
+/>
+
+## Multiple Subscriptions
+
+You can create multiple subscriptions in a single operation by composing schemas:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const combinedSchema = z.object({
+  userPresence: userPresenceSchema,
+  notifications: notificationSchema,
+  chatMessages: chatMessageSchema,
+});
+
+const subscription = createSubscription(combinedSchema, {
+  operationName: 'MultiSubscription',
+  variables: { 
+    userId: 'user123',
+    roomId: 'room456'
+  }
+});
+
+console.log(subscription);
+/* Output:
+subscription MultiSubscription($userId: String!, $roomId: String!) {
+  multiSubscription(userId: $userId, roomId: $roomId) {
+    userPresence {
+      id
+      name
+      status
+      lastSeen
+      typing
+    }
+    notifications {
+      id
+      type
+      message
+      timestamp
+      read
+    }
+    chatMessages {
+      id
+      content
+      author {
+        id
+        name
+        avatarUrl
+      }
+      timestamp
+      roomId
+      edited
+      reactions
+    }
+  }
+}
+*/
+  `}
+/>
+
+## Controlling Subscription Depth
+
+Like queries and mutations, you can control the depth of subscription fields:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const subscription = createSubscription(chatMessageSchema, {
+  operationName: 'SubscribeChatRoom',
+  variables: { roomId: 'room123' },
+  maxDepth: 2 // Limit recursion depth
+});
+
+console.log(subscription);
+/* Output:
+subscription SubscribeChatRoom($roomId: String!) {
+  chatRoom(roomId: $roomId) {
+    id
+    content
+    author
+    timestamp
+    roomId
+    edited
+    reactions
+  }
+}
+*/
+  `}
+/>
+
+## Live Examples
+
+<Canvas>
+  <Story id="graphql-subscription--user-notifications" />
+</Canvas>
+
+<Canvas>
+  <Story id="graphql-subscription--chat-room-messages" />
+</Canvas>
+
+<Canvas>
+  <Story id="graphql-subscription--inferred-subscription-operation" />
+</Canvas>

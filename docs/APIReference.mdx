@@ -1,0 +1,319 @@
+import { ArgsTable, Canvas, Description, Meta, Source, Story } from '@storybook/addon-docs';
+import { z } from 'zod';
+import { GQLType, ToGQLOptions } from '../src/index';
+import { processMutation } from '../src/mutation';
+import { processQuery } from '../src/query';
+import { processSubscription } from '../src/subscription';
+
+<Meta title="Documentation/API Reference" />
+
+# API Reference
+
+Complete reference for the `zod2gql` API, including types, methods, and configuration options.
+
+## Core Types
+
+### GQLType Enum
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+enum GQLType {
+  Query = 'query',
+  Mutation = 'mutation',
+  Subscription = 'subscription'
+}
+  `}
+/>
+
+Used to specify the type of GraphQL operation when calling the `toGQL` method.
+
+### ToGQLOptions Interface
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+interface ToGQLOptions {
+  operationName?: string;      // The name of the GraphQL operation
+  variables?: Record<string, any>; // Variables to include in the operation
+  maxDepth?: number;           // Maximum depth for nested fields (default: 10)
+  inputTypeMap?: Record<string, string>; // Map variable names to GraphQL input types
+}
+  `}
+/>
+
+Configuration options for generating GraphQL operations.
+
+## Extension Methods
+
+### toGQL
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+// Extension method added to ZodObject
+toGQL(
+  queryType?: GQLType,      // Type of operation (Query, Mutation, Subscription)
+  options?: ToGQLOptions,   // Configuration options
+  depth?: number            // Current recursion depth (for internal use)
+): string;                  // Returns the GraphQL operation string
+  `}
+/>
+
+The core method that generates a GraphQL operation string from a Zod schema.
+
+## Helper Functions
+
+### createQuery
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function createQuery(
+  schema: z.ZodObject<any>,  // The Zod schema to convert
+  options?: ToGQLOptions     // Configuration options
+): string;                   // Returns the GraphQL query string
+  `}
+/>
+
+Helper function to generate a GraphQL query.
+
+### createMutation
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function createMutation(
+  schema: z.ZodObject<any>,  // The Zod schema to convert
+  options?: ToGQLOptions     // Configuration options
+): string;                   // Returns the GraphQL mutation string
+  `}
+/>
+
+Helper function to generate a GraphQL mutation.
+
+### createSubscription
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function createSubscription(
+  schema: z.ZodObject<any>,  // The Zod schema to convert
+  options?: ToGQLOptions     // Configuration options
+): string;                   // Returns the GraphQL subscription string
+  `}
+/>
+
+Helper function to generate a GraphQL subscription.
+
+## Utility Functions
+
+### getOperationFieldName
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function getOperationFieldName(
+  schema: z.ZodObject<any>,  // The Zod schema
+  operationName?: string     // Optional operation name to derive field name from
+): string;                   // Returns the inferred field name
+  `}
+/>
+
+Utility function to infer a GraphQL field name from a schema or operation name.
+
+### formatVariablesDeclaration
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function formatVariablesDeclaration(
+  variables?: Record<string, any>,  // Variables to format
+  inputTypeMap?: Record<string, string>  // Type mapping for variables
+): string;                           // Returns the formatted variables declaration
+  `}
+/>
+
+Formats variables as GraphQL variable declarations.
+
+### formatFieldArguments
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function formatFieldArguments(
+  variables?: Record<string, any>  // Variables to format as field arguments
+): string;                         // Returns the formatted field arguments
+  `}
+/>
+
+Formats variables as GraphQL field arguments.
+
+## Examples
+
+### Basic Query
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createQuery } from 'zod2gql';
+
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+});
+
+const query = createQuery(userSchema, {
+  operationName: 'GetUser',
+  variables: { id: '123' }
+});
+
+// Result:
+// query GetUser($id: String!) {
+//   user(id: $id) {
+//     id
+//     name
+//     email
+//   }
+// }
+  `}
+/>
+
+### Mutation with Input Types
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createMutation } from 'zod2gql';
+
+const userResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+});
+
+const mutation = createMutation(userResponseSchema, {
+  operationName: 'CreateUser',
+  variables: {
+    userData: { name: 'John', email: 'john@example.com' }
+  },
+  inputTypeMap: {
+    userData: 'UserInput'
+  }
+});
+
+// Result:
+// mutation CreateUser($userData: UserInput!) {
+//   createUser(userData: $userData) {
+//     id
+//     name
+//     email
+//   }
+// }
+  `}
+/>
+
+### Subscription with Depth Limit
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createSubscription } from 'zod2gql';
+
+const notificationSchema = z.object({
+  id: z.string(),
+  message: z.string(),
+  user: z.object({
+    id: z.string(),
+    name: z.string(),
+    profile: z.object({
+      avatar: z.string(),
+      bio: z.string()
+    })
+  })
+});
+
+const subscription = createSubscription(notificationSchema, {
+  operationName: 'SubscribeNotifications',
+  variables: { userId: '123' },
+  maxDepth: 3 // Limit nesting depth
+});
+
+// Result:
+// subscription SubscribeNotifications($userId: String!) {
+//   notifications(userId: $userId) {
+//     id
+//     message
+//     user {
+//       id
+//       name
+//       profile {
+//         avatar
+//         bio
+//       }
+//     }
+//   }
+// }
+  `}
+/>
+
+### Using toGQL Directly
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+import 'zod2gql/query'; // Import the extension
+
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+});
+
+const query = userSchema.toGQL(GQLType.Query, {
+  operationName: 'GetUser',
+  variables: { id: '123' }
+});
+
+// Result:
+// query GetUser($id: String!) {
+//   user(id: $id) {
+//     id
+//     name
+//     email
+//   }
+// }
+  `}
+/>

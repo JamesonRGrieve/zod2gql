@@ -1,0 +1,175 @@
+import { ArgsTable, Canvas, Meta, Story } from '@storybook/addon-docs';
+
+
+<Meta title="Documentation/Shared Components" />
+
+# Shared Documentation Components
+
+This file contains reusable documentation components that can be imported into other documentation files.
+
+## CodeBlock
+
+The `CodeBlock` component can be used to display code with syntax highlighting across documentation.
+
+export const CodeBlock = ({ language = 'typescript', children }) => (
+  <pre className={`language-${language}`}>
+    <code className={`language-${language}`}>{children}</code>
+  </pre>
+);
+
+<CodeBlock language="typescript">
+{`
+import { z } from 'zod';
+import { createQuery } from 'zod2gql';
+
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+});
+
+const query = createQuery(userSchema, {
+  operationName: 'GetUser',
+  variables: { id: '123' }
+});
+`}
+</CodeBlock>
+
+## TypeTable
+
+The `TypeTable` component can be used to document types and interfaces.
+
+export const TypeTable = ({ type, properties }) => (
+  <table className="docblock-argstable">
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Type</th>
+        <th>Required</th>
+        <th>Description</th>
+      </tr>
+    </thead>
+    <tbody>
+      {properties.map((prop) => (
+        <tr key={prop.name}>
+          <td>{prop.name}</td>
+          <td><code>{prop.type}</code></td>
+          <td>{prop.required ? 'Yes' : 'No'}</td>
+          <td>{prop.description}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
+
+<h3>ToGQLOptions Interface</h3>
+
+<TypeTable 
+  type="ToGQLOptions"
+  properties={[
+    {
+      name: "operationName",
+      type: "string",
+      required: false,
+      description: "Name of the GraphQL operation"
+    },
+    {
+      name: "variables",
+      type: "Record<string, any>",
+      required: false,
+      description: "Variables to include in the GraphQL operation"
+    },
+    {
+      name: "maxDepth",
+      type: "number",
+      required: false,
+      description: "Maximum depth for nested fields (default: 10)"
+    },
+    {
+      name: "inputTypeMap",
+      type: "Record<string, string>",
+      required: false,
+      description: "Map of variable names to GraphQL input types"
+    }
+  ]}
+/>
+
+## MethodSignature
+
+The `MethodSignature` component can be used to document functions and methods.
+
+export const MethodSignature = ({ name, signature, description, examples = [] }) => (
+  <div className="method-signature">
+    <h3>{name}</h3>
+    <CodeBlock language="typescript">{signature}</CodeBlock>
+    <p>{description}</p>
+    {examples.length > 0 && (
+      <>
+        <h4>Examples</h4>
+        {examples.map((example, index) => (
+          <div key={index}>
+            <CodeBlock language="typescript">{example.code}</CodeBlock>
+            {example.description && <p>{example.description}</p>}
+          </div>
+        ))}
+      </>
+    )}
+  </div>
+);
+
+<MethodSignature
+  name="createQuery"
+  signature={`function createQuery(
+  schema: z.ZodObject<any>,
+  options?: ToGQLOptions
+): string;`}
+  description="Creates a GraphQL query from a Zod schema."
+  examples={[
+    {
+      code: `const query = createQuery(userSchema, {
+  operationName: 'GetUser',
+  variables: { id: '123' }
+});`,
+      description: "Generates a query with operation name and variables"
+    }
+  ]}
+/>
+
+## InfoBox
+
+Export information boxes for notes, warnings, etc.
+
+export const InfoBox = ({ type = 'info', title, children }) => (
+  <div className={`info-box ${type}`}>
+    {title && <h4>{title}</h4>}
+    <div>{children}</div>
+  </div>
+);
+
+<InfoBox type="info" title="Note">
+  Remember to import the appropriate extension files when using zod2gql.
+</InfoBox>
+
+<InfoBox type="warning" title="Warning">
+  Setting maxDepth too high with circular references can lead to very large queries.
+</InfoBox>
+
+<InfoBox type="tip" title="Tip">
+  Use the inputTypeMap option for more control over complex input types in mutations.
+</InfoBox>
+
+## Usage
+
+To use these shared components in other MDX files:
+
+```jsx
+import { CodeBlock, TypeTable, MethodSignature, InfoBox } from './SharedComponents.mdx';
+
+<CodeBlock language="typescript">
+{`// Your code here`}
+</CodeBlock>
+
+<InfoBox type="warning" title="Important">
+  This is an important warning message.
+</InfoBox>
+```

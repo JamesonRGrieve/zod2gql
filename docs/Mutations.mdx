@@ -1,0 +1,294 @@
+import { ArgsTable, Canvas, Description, Meta, Source, Story } from '@storybook/addon-docs';
+import { z } from 'zod';
+import { GQLType } from '../src/index';
+import { createMutation } from '../src/mutation';
+import * as MutationStories from '../src/mutation.stories';
+
+<Meta title="Documentation/Mutations" of={MutationStories} />
+
+# GraphQL Mutations
+
+Learn how to generate GraphQL mutations from Zod schemas using `zod2gql`.
+
+## Basic Mutation Generation
+
+Generate a simple GraphQL mutation using the `createMutation` helper function:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createMutation } from 'zod2gql';
+
+const userResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  createdAt: z.string(),
+});
+
+const mutation = createMutation(userResponseSchema, {
+  operationName: 'CreateUser',
+  variables: { 
+    name: 'John Doe',
+    email: 'john@example.com',
+    password: 'secret123'
+  }
+});
+
+console.log(mutation);
+/* Output:
+mutation CreateUser($name: String!, $email: String!, $password: String!) {
+  createUser(name: $name, email: $email, password: $password) {
+    id
+    name
+    email
+    createdAt
+  }
+}
+*/
+  `}
+/>
+
+## Input Types in Mutations
+
+For mutations with complex input types, you can use the `inputTypeMap` option:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const userResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+});
+
+const mutation = createMutation(userResponseSchema, {
+  operationName: 'CreateUser',
+  variables: {
+    userData: {
+      name: 'John Doe',
+      email: 'john@example.com',
+      password: 'secret123'
+    }
+  },
+  inputTypeMap: {
+    userData: 'UserInput'
+  }
+});
+
+console.log(mutation);
+/* Output:
+mutation CreateUser($userData: UserInput!) {
+  createUser(userData: $userData) {
+    id
+    name
+    email
+  }
+}
+*/
+  `}
+/>
+
+## Complex Mutation with Nested Types
+
+`zod2gql` handles complex mutation response types with nested structures:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const addressSchema = z.object({
+  street: z.string(),
+  city: z.string(),
+  zipCode: z.string(),
+});
+
+const createUserResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  address: addressSchema,
+  createdAt: z.string(),
+});
+
+const mutation = createMutation(createUserResponseSchema, {
+  operationName: 'CreateUser',
+  variables: {
+    userInput: {
+      name: 'John Doe',
+      email: 'john@example.com',
+      address: {
+        street: '123 Main St',
+        city: 'Anytown',
+        zipCode: '12345'
+      }
+    }
+  },
+  inputTypeMap: {
+    userInput: 'UserInput'
+  }
+});
+
+console.log(mutation);
+/* Output:
+mutation CreateUser($userInput: UserInput!) {
+  createUser(userInput: $userInput) {
+    id
+    name
+    email
+    address {
+      street
+      city
+      zipCode
+    }
+    createdAt
+  }
+}
+*/
+  `}
+/>
+
+## Multiple Input Variables
+
+Mutations often require multiple input variables, which are easily supported:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const postSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.string(),
+  published: z.boolean(),
+});
+
+const mutation = createMutation(postSchema, {
+  operationName: 'UpdatePost',
+  variables: {
+    id: 'post123',
+    title: 'Updated Title',
+    content: 'Updated content...',
+    published: true
+  }
+});
+
+console.log(mutation);
+/* Output:
+mutation UpdatePost($id: String!, $title: String!, $content: String!, $published: Boolean!) {
+  updatePost(id: $id, title: $title, content: $content, published: $published) {
+    id
+    title
+    content
+    published
+  }
+}
+*/
+  `}
+/>
+
+## Handling Arrays in Mutations
+
+Array fields in mutation responses are handled properly:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const createPostResponseSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.string(),
+  tags: z.array(z.string()),
+  createdAt: z.string(),
+});
+
+const mutation = createMutation(createPostResponseSchema, {
+  operationName: 'CreatePost',
+  variables: {
+    post: {
+      title: 'New Post',
+      content: 'Content here...',
+      tags: ['news', 'tech']
+    }
+  },
+  inputTypeMap: {
+    post: 'PostInput'
+  }
+});
+
+console.log(mutation);
+/* Output:
+mutation CreatePost($post: PostInput!) {
+  createPost(post: $post) {
+    id
+    title
+    content
+    tags
+    createdAt
+  }
+}
+*/
+  `}
+/>
+
+## Auto-Inferring Input Types
+
+Without an explicit `inputTypeMap`, `zod2gql` will try to infer input types from the variable names:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const userResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+});
+
+const mutation = createMutation(userResponseSchema, {
+  operationName: 'CreateUser',
+  variables: {
+    userData: {
+      name: 'John Doe',
+      email: 'john@example.com'
+    }
+  }
+  // No inputTypeMap provided
+});
+
+console.log(mutation);
+/* Output:
+mutation CreateUser($userData: UserDataInput!) {
+  createUser(userData: $userData) {
+    id
+    name
+    email
+  }
+}
+*/
+  `}
+/>
+
+## Live Examples
+
+<Canvas>
+  <Story id="graphql-mutation--create-user" />
+</Canvas>
+
+<Canvas>
+  <Story id="graphql-mutation--create-post-with-input-types" />
+</Canvas>
+
+<Canvas>
+  <Story id="graphql-mutation--update-user" />
+</Canvas>

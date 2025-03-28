@@ -1,0 +1,192 @@
+import { ArgsTable, Canvas, Description, Meta, Source, Story } from '@storybook/addon-docs';
+import { z } from 'zod';
+import { GQLType } from '../src/index';
+import { processMutation } from '../src/mutation';
+import { processQuery } from '../src/query';
+import { processSubscription } from '../src/subscription';
+
+<Meta title="Documentation/Getting Started" />
+
+# Getting Started with zod2gql
+
+This guide will help you get up and running with `zod2gql` quickly.
+
+## Installation
+
+<Source
+  language="bash"
+  dark
+  format={true}
+  code={`
+# npm
+npm install zod2gql
+
+# yarn
+yarn add zod2gql
+
+# pnpm
+pnpm add zod2gql
+  `}
+/>
+
+## Basic Setup
+
+To use `zod2gql`, you need to import the necessary extension files:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+// Import the extensions you need
+import 'zod2gql/query';     // For queries
+import 'zod2gql/mutation';  // For mutations
+import 'zod2gql/subscription'; // For subscriptions
+  `}
+/>
+
+## Your First GraphQL Query
+
+Let's create a simple Zod schema and generate a GraphQL query from it:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+import { createQuery } from 'zod2gql';
+
+// Define a Zod schema
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  age: z.number(),
+  isActive: z.boolean(),
+});
+
+// Generate a GraphQL query
+const query = createQuery(userSchema, {
+  operationName: 'GetUser',
+  variables: { id: '123' }
+});
+
+console.log(query);
+/* Output:
+query GetUser($id: String!) {
+  user(id: $id) {
+    id
+    name
+    email
+    age
+    isActive
+  }
+}
+*/
+  `}
+/>
+
+## Using Helper Functions
+
+`zod2gql` provides convenient helper functions for the different GraphQL operation types:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+// Query
+const query = createQuery(userSchema, {
+  operationName: 'GetUser',
+  variables: { id: '123' }
+});
+
+// Mutation
+const mutation = createMutation(userSchema, {
+  operationName: 'UpdateUser',
+  variables: { id: '123', name: 'New Name' }
+});
+
+// Subscription
+const subscription = createSubscription(userSchema, {
+  operationName: 'UserUpdated',
+  variables: { userId: '123' }
+});
+  `}
+/>
+
+## Direct Method Usage
+
+You can also use the `toGQL` method directly for more control:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+// Using the method directly
+const query = userSchema.toGQL(GQLType.Query, {
+  operationName: 'GetUser',
+  variables: { id: '123' }
+});
+
+const mutation = userSchema.toGQL(GQLType.Mutation, {
+  operationName: 'UpdateUser',
+  variables: { id: '123', name: 'New Name' }
+});
+
+const subscription = userSchema.toGQL(GQLType.Subscription, {
+  operationName: 'UserUpdated',
+  variables: { userId: '123' }
+});
+  `}
+/>
+
+## Schema Type Names
+
+To enable automatic operation field name inference, you can add a type name to your Zod schema:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+// Helper function to add a type name
+const withTypeName = (schema, name) => {
+  (schema as any)._def.typeName = name;
+  return schema;
+};
+
+// Add a type name to your schema
+const userSchema = withTypeName(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    email: z.string()
+  }),
+  'User'
+);
+
+// The operation field name "user" will be inferred
+const query = createQuery(userSchema, {
+  variables: { id: '123' }
+});
+
+console.log(query);
+/* Output:
+query($id: String!) {
+  user(id: $id) {
+    id
+    name
+    email
+  }
+}
+*/
+  `}
+/>
+

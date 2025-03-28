@@ -1,0 +1,283 @@
+import { ArgsTable, Canvas, Description, Meta, Source, Story } from '@storybook/addon-docs';
+import { z } from 'zod';
+import { GQLType } from '../src/index';
+import { processMutation } from '../src/mutation';
+import { processQuery } from '../src/query';
+import { processSubscription } from '../src/subscription';
+
+<Meta title="Documentation/Advanced Usage" />
+
+# Advanced Usage
+
+Discover advanced techniques and features of `zod2gql` to handle complex GraphQL generation scenarios.
+
+## Type Name Inference
+
+You can add a type name to your Zod schema to enable automatic field name inference:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createQuery } from 'zod2gql';
+
+// Helper function to add a type name to a schema
+const withTypeName = (schema, name) => {
+  (schema as any)._def.typeName = name;
+  return schema;
+};
+
+// Create a schema with a type name
+const productSchema = withTypeName(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    price: z.number(),
+  }),
+  'Product'
+);
+
+// No need to specify operationName - it will be inferred from the type name
+const query = createQuery(productSchema, {
+  variables: { id: 'prod123' }
+});
+
+console.log(query);
+/* Output:
+query($id: String!) {
+  product(id: $id) {
+    id
+    name
+    price
+  }
+}
+*/
+  `}
+/>
+
+## Custom Recursion Depth
+
+For complex schemas with circular references or deep nesting, you can control the recursion depth:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+// Define a schema with circular references
+const categorySchema = withTypeName(z.object({
+  id: z.string(),
+  name: z.string(),
+}), 'Category');
+
+// Self-referential through lazy() for parent/child relationships
+categorySchema.extend({
+  parentCategory: z.lazy(() => categorySchema).optional(),
+  subCategories: z.array(z.lazy(() => categorySchema)).optional(),
+});
+
+// Limit the depth to prevent overly complex queries
+const query = createQuery(categorySchema, {
+  operationName: 'GetCategory',
+  variables: { id: 'cat123' },
+  maxDepth: 3 // Control recursion depth
+});
+
+console.log(query);
+/* Output limited to depth 3 */
+  `}
+/>
+
+## Complex Input Type Mapping
+
+For mutations with complex input types, you can provide detailed type mappings:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createMutation } from 'zod2gql';
+
+const orderResponseSchema = withTypeName(z.object({
+  id: z.string(),
+  status: z.string(),
+  items: z.array(z.object({
+    productId: z.string(),
+    quantity: z.number(),
+    price: z.number()
+  })),
+  total: z.number()
+}), 'Order');
+
+const mutation = createMutation(orderResponseSchema, {
+  operationName: 'CreateOrder',
+  variables: {
+    orderInput: {
+      items: [
+        { productId: 'p1', quantity: 2 },
+        { productId: 'p2', quantity: 1 }
+      ],
+      shipping: { address: '123 Main St', method: 'express' },
+      payment: { type: 'credit', cardToken: 'token123' }
+    }
+  },
+  // Custom type mapping for complex inputs
+  inputTypeMap: {
+    orderInput: 'OrderInput',
+    'orderInput.items': 'OrderItemInput',
+    'orderInput.shipping': 'ShippingInput',
+    'orderInput.payment': 'PaymentMethodInput'
+  }
+});
+  `}
+/>
+
+## Using with GraphQL Client Libraries
+
+`zod2gql` works well with GraphQL client libraries like Apollo Client or urql:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { createQuery } from 'zod2gql';
+import { useQuery } from '@apollo/client';
+import { gql } from 'graphql-tag';
+
+// Define your schema
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+});
+
+// Generate the query
+const USER_QUERY = createQuery(userSchema, {
+  operationName: 'GetUser',
+  variables: { id: '$id' } // Using a placeholder
+});
+
+// Use with Apollo Client
+function UserProfile({ userId }) {
+  // Parse the generated query
+  const { loading, error, data } = useQuery(gql\`\${USER_QUERY.replace('$id', 'id')}\`, {
+    variables: { id: userId }
+  });
+
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error :(</p>;
+
+  return (
+    <div>
+      <h2>{data.user.name}</h2>
+      <p>{data.user.email}</p>
+    </div>
+  );
+}
+  `}
+/>
+
+## Custom Field Resolution
+
+You can handle custom field resolution for specific schema types:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+// Extend the base processSchema function for custom field handling
+const originalToGQL = z.ZodObject.prototype.toGQL;
+
+z.ZodObject.prototype.toGQL = function(
+  queryType = GQLType.Query,
+  options = {},
+  depth = 0
+) {
+  // Special handling for schemas with a specific type name
+  if ((this as any)._def.typeName === 'CustomType' && depth === 0) {
+    // Custom field generation logic
+    const fields = customFieldGenerator(this);
+    return \`\${queryType} \${options.operationName || ''}(...) {\n  \${fields}\n}\`;
+  }
+  
+  // Fall back to the original implementation
+  return originalToGQL.call(this, queryType, options, depth);
+};
+
+function customFieldGenerator(schema) {
+  // Your custom field generation logic here
+  // ...
+}
+  `}
+/>
+
+## Composing Multiple Schemas
+
+You can compose multiple schemas for more complex operations:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { createQuery } from 'zod2gql';
+
+const userSchema = withTypeName(z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+}), 'User');
+
+const postSchema = withTypeName(z.object({
+  id: z.string(),
+  title: z.string(),
+  content: z.string()
+}), 'Post');
+
+const profileSchema = withTypeName(z.object({
+  user: userSchema,
+  recentPosts: z.array(postSchema),
+  stats: z.object({
+    postCount: z.number(),
+    followersCount: z.number()
+  })
+}), 'Profile');
+
+const query = createQuery(profileSchema, {
+  operationName: 'GetUserProfile',
+  variables: { userId: 'user123' }
+});
+
+console.log(query);
+/* Output:
+query GetUserProfile($userId: String!) {
+  profile(userId: $userId) {
+    user {
+      id
+      name
+      email
+    }
+    recentPosts {
+      id
+      title
+      content
+    }
+    stats {
+      postCount
+      followersCount
+    }
+  }
+}
+*/
+  `}
+/>

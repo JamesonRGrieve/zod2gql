@@ -5,6 +5,15 @@ import { z } from 'zod';
 import { ToGQLOptions } from './index';
 import { createSubscription } from './subscription';
 
+/**
+ * GraphQL Subscription Generation
+ *
+ * This component demonstrates how to generate GraphQL subscriptions from Zod schemas.
+ *
+ * @see ../docs/Subscriptions.mdx for detailed documentation
+ * @see ../docs/PracticalExamples.mdx for real-world examples
+ */
+
 // Import Zod schema and GQL converter
 import './index';
 import './subscription';
@@ -50,6 +59,18 @@ type SubscriptionStoryArgs = {
 const meta: Meta<typeof SubscriptionDisplay> = {
   title: 'GraphQL/Subscription',
   component: SubscriptionDisplay,
+  parameters: {
+    docs: {
+      description: {
+        component:
+          'Generate GraphQL subscriptions from Zod schemas. See the [Subscriptions documentation](/?path=/docs/documentation-subscriptions--docs) for more details.',
+      },
+      source: {
+        type: 'dynamic',
+        excludeDecorators: true,
+      },
+    },
+  },
 };
 
 export default meta;
@@ -234,6 +255,14 @@ export const UserPresenceSubscription: Story = {
   }
 }`,
   },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A GraphQL subscription to track user presence status changes in real-time.',
+      },
+      source: { type: 'code' },
+    },
+  },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
@@ -302,6 +331,14 @@ export const ChatRoomMessagesSubscription: Story = {
     mentions
   }
 }`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A GraphQL subscription for real-time chat messages with nested author details and message attachments.',
+      },
+      source: { type: 'code' },
+    },
   },
 };
 

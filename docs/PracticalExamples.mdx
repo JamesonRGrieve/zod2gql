@@ -1,0 +1,456 @@
+import { ArgsTable, Canvas, Description, Meta, Source, Story } from '@storybook/addon-docs';
+import { z } from 'zod';
+import { GQLType } from '../src/index';
+import { createMutation } from '../src/mutation';
+import { createQuery } from '../src/query';
+import { createSubscription } from '../src/subscription';
+import { CodeBlock, InfoBox, TypeTable } from './DocBlock';
+
+<Meta title="Documentation/Practical Examples" />
+
+# Practical Examples
+
+Real-world examples of using `zod2gql` in common scenarios.
+
+<InfoBox type="info" title="Note">
+  These examples demonstrate how to use zod2gql in typical GraphQL integration use cases.
+</InfoBox>
+
+## User Management System
+
+### User Schema with Authentication
+
+<CodeBlock language="typescript">
+{`
+import { z } from 'zod';
+import { createQuery, createMutation } from 'zod2gql';
+
+// Define user-related schemas
+const userSchema = z.object({
+  id: z.string(),
+  username: z.string(),
+  email: z.string().email(),
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  role: z.enum(['admin', 'user', 'moderator']),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+});
+
+const loginResponseSchema = z.object({
+  token: z.string(),
+  refreshToken: z.string(),
+  user: userSchema,
+});
+
+// Generate queries
+const getUserQuery = createQuery(userSchema, {
+  operationName: 'GetUser',
+  variables: { id: '$id' }
+});
+
+// Generate mutations
+const loginMutation = createMutation(loginResponseSchema, {
+  operationName: 'Login',
+  variables: {
+    email: '$email',
+    password: '$password'
+  }
+});
+
+const registerMutation = createMutation(userSchema, {
+  operationName: 'RegisterUser',
+  variables: {
+    input: {
+      username: '$username',
+      email: '$email',
+      password: '$password',
+      firstName: '$firstName',
+      lastName: '$lastName'
+    }
+  },
+  inputTypeMap: {
+    input: 'RegisterUserInput'
+  }
+});
+
+// Generate subscription
+const userStatusSubscription = createSubscription(userSchema, {
+  operationName: 'UserStatusChanged',
+  variables: { userId: '$userId' }
+});
+`}
+</CodeBlock>
+
+## E-commerce Product Catalog
+
+### Product, Category, and Review Schemas
+
+<CodeBlock language="typescript">
+{`
+import { z } from 'zod';
+import { createQuery, createMutation } from 'zod2gql';
+
+// Define schemas
+const categorySchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  description: z.string().optional(),
+  parentId: z.string().optional(),
+});
+
+const reviewSchema = z.object({
+  id: z.string(),
+  productId: z.string(),
+  userId: z.string(),
+  rating: z.number().min(1).max(5),
+  title: z.string().optional(),
+  content: z.string(),
+  createdAt: z.string(),
+});
+
+const productSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+  description: z.string(),
+  price: z.number().positive(),
+  salePrice: z.number().positive().optional(),
+  inventory: z.number().int().nonnegative(),
+  categoryId: z.string(),
+  category: categorySchema,
+  reviews: z.array(reviewSchema),
+  averageRating: z.number().min(0).max(5).optional(),
+  images: z.array(z.string()),
+  isActive: z.boolean(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+});
+
+// Generate queries
+const getProductQuery = createQuery(productSchema, {
+  operationName: 'GetProduct',
+  variables: { slug: '$slug' }
+});
+
+const getCategoryProductsQuery = createQuery(
+  z.object({
+    category: categorySchema,
+    products: z.array(productSchema),
+    pagination: z.object({
+      total: z.number(),
+      page: z.number(),
+      pageSize: z.number(),
+      hasMore: z.boolean(),
+    }),
+  }),
+  {
+    operationName: 'GetCategoryProducts',
+    variables: { 
+      categorySlug: '$categorySlug',
+      page: '$page',
+      pageSize: '$pageSize'
+    }
+  }
+);
+
+// Generate mutations
+const createProductMutation = createMutation(productSchema, {
+  operationName: 'CreateProduct',
+  variables: {
+    input: {
+      name: '$name',
+      slug: '$slug',
+      description: '$description',
+      price: '$price',
+      salePrice: '$salePrice',
+      inventory: '$inventory',
+      categoryId: '$categoryId',
+      images: '$images',
+      isActive: '$isActive'
+    }
+  },
+  inputTypeMap: {
+    input: 'CreateProductInput'
+  }
+});
+
+const createReviewMutation = createMutation(reviewSchema, {
+  operationName: 'CreateReview',
+  variables: {
+    input: {
+      productId: '$productId',
+      rating: '$rating',
+      title: '$title',
+      content: '$content'
+    }
+  },
+  inputTypeMap: {
+    input: 'CreateReviewInput'
+  }
+});
+`}
+</CodeBlock>
+
+## Blog Platform
+
+### Posts, Comments, and Tags Schemas
+
+<CodeBlock language="typescript">
+{`
+import { z } from 'zod';
+import { createQuery, createMutation, createSubscription } from 'zod2gql';
+
+// Define schemas
+const authorSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  bio: z.string().optional(),
+  avatarUrl: z.string().optional(),
+});
+
+const tagSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  slug: z.string(),
+});
+
+const commentSchema = z.object({
+  id: z.string(),
+  postId: z.string(),
+  author: authorSchema,
+  content: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+  isEdited: z.boolean().default(false),
+  likes: z.number().default(0),
+});
+
+const postSchema = z.object({
+  id: z.string(),
+  title: z.string(),
+  slug: z.string(),
+  excerpt: z.string(),
+  content: z.string(),
+  author: authorSchema,
+  tags: z.array(tagSchema),
+  comments: z.array(commentSchema),
+  featured: z.boolean().default(false),
+  publishedAt: z.string().optional(),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+  readingTime: z.number().optional(),
+  viewCount: z.number().default(0),
+  likeCount: z.number().default(0),
+});
+
+// Generate queries
+const getPostQuery = createQuery(postSchema, {
+  operationName: 'GetPost',
+  variables: { slug: '$slug' }
+});
+
+const getPostsQuery = createQuery(
+  z.object({
+    posts: z.array(postSchema),
+    pagination: z.object({
+      total: z.number(),
+      page: z.number(),
+      pageSize: z.number(),
+      hasMore: z.boolean(),
+    }),
+  }),
+  {
+    operationName: 'GetPosts',
+    variables: { 
+      page: '$page',
+      pageSize: '$pageSize',
+      tag: '$tag',
+      authorId: '$authorId'
+    }
+  }
+);
+
+// Generate mutations
+const createPostMutation = createMutation(postSchema, {
+  operationName: 'CreatePost',
+  variables: {
+    input: {
+      title: '$title',
+      content: '$content',
+      excerpt: '$excerpt',
+      tags: '$tags',
+      featured: '$featured',
+      publish: '$publish'
+    }
+  },
+  inputTypeMap: {
+    input: 'CreatePostInput'
+  }
+});
+
+const createCommentMutation = createMutation(commentSchema, {
+  operationName: 'CreateComment',
+  variables: {
+    postId: '$postId',
+    content: '$content'
+  }
+});
+
+// Generate subscription
+const newCommentSubscription = createSubscription(commentSchema, {
+  operationName: 'OnNewComment',
+  variables: { postId: '$postId' }
+});
+
+const postUpdateSubscription = createSubscription(postSchema, {
+  operationName: 'OnPostUpdate',
+  variables: { postId: '$postId' }
+});
+`}
+</CodeBlock>
+
+## Real-time Chat Application
+
+### Messages, Channels, and Presence
+
+<CodeBlock language="typescript">
+{`
+import { z } from 'zod';
+import { createQuery, createMutation, createSubscription } from 'zod2gql';
+
+// Define schemas
+const userPresenceSchema = z.object({
+  userId: z.string(),
+  username: z.string(),
+  status: z.enum(['online', 'away', 'busy', 'offline']),
+  lastSeen: z.string(),
+  typing: z.boolean().default(false),
+  activeChannelId: z.string().optional(),
+});
+
+const messageAttachmentSchema = z.object({
+  id: z.string(),
+  type: z.enum(['image', 'file', 'link']),
+  url: z.string(),
+  title: z.string().optional(),
+  size: z.number().optional(),
+  mimeType: z.string().optional(),
+});
+
+const messageSchema = z.object({
+  id: z.string(),
+  channelId: z.string(),
+  userId: z.string(),
+  username: z.string(),
+  content: z.string(),
+  attachments: z.array(messageAttachmentSchema).optional(),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+  isEdited: z.boolean().default(false),
+  reactions: z.record(z.string(), z.number()).optional(),
+  mentions: z.array(z.string()).optional(),
+});
+
+const channelSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: z.enum(['public', 'private', 'direct']),
+  members: z.array(z.string()),
+  createdAt: z.string(),
+  updatedAt: z.string().optional(),
+  lastMessageAt: z.string().optional(),
+});
+
+// Generate queries
+const getChannelsQuery = createQuery(
+  z.object({
+    channels: z.array(channelSchema)
+  }),
+  {
+    operationName: 'GetChannels',
+    variables: { userId: '$userId' }
+  }
+);
+
+const getChannelMessagesQuery = createQuery(
+  z.object({
+    messages: z.array(messageSchema),
+    channel: channelSchema,
+    members: z.array(userPresenceSchema)
+  }),
+  {
+    operationName: 'GetChannelMessages',
+    variables: { 
+      channelId: '$channelId',
+      limit: '$limit',
+      before: '$before'
+    }
+  }
+);
+
+// Generate mutations
+const sendMessageMutation = createMutation(messageSchema, {
+  operationName: 'SendMessage',
+  variables: {
+    input: {
+      channelId: '$channelId',
+      content: '$content',
+      attachments: '$attachments',
+      mentions: '$mentions'
+    }
+  },
+  inputTypeMap: {
+    input: 'SendMessageInput'
+  }
+});
+
+const createChannelMutation = createMutation(channelSchema, {
+  operationName: 'CreateChannel',
+  variables: {
+    name: '$name',
+    type: '$type',
+    members: '$members'
+  }
+});
+
+const updateUserPresenceMutation = createMutation(userPresenceSchema, {
+  operationName: 'UpdateUserPresence',
+  variables: {
+    status: '$status',
+    typing: '$typing',
+    activeChannelId: '$activeChannelId'
+  }
+});
+
+// Generate subscriptions
+const messageSubscription = createSubscription(messageSchema, {
+  operationName: 'OnMessage',
+  variables: { channelId: '$channelId' }
+});
+
+const typingIndicatorSubscription = createSubscription(
+  z.object({
+    userId: z.string(),
+    username: z.string(),
+    channelId: z.string(),
+    typing: z.boolean()
+  }),
+  {
+    operationName: 'OnTypingIndicator',
+    variables: { channelId: '$channelId' }
+  }
+);
+
+const presenceChangedSubscription = createSubscription(userPresenceSchema, {
+  operationName: 'OnPresenceChanged',
+  variables: { channelId: '$channelId' }
+});
+`}
+</CodeBlock>
+
+<InfoBox type="tip" title="Integration tip">
+  These examples can be used with GraphQL client libraries like Apollo Client, urql, or React Query with GraphQL support.
+</InfoBox>

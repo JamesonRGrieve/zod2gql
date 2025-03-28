@@ -1,0 +1,74 @@
+import { ArgsTable, Canvas, Meta, Source, Story } from '@storybook/addon-docs';
+import fs from 'fs';
+import path from 'path';
+import { z } from 'zod';
+import { createMutation } from '../src/mutation';
+import { createQuery } from '../src/query';
+import { createSubscription } from '../src/subscription';
+
+<Meta title="Documentation/Welcome" />
+
+# zod2gql
+
+> Convert Zod schemas to GraphQL queries, mutations, and subscriptions
+
+`zod2gql` is a utility library that extends Zod's schema objects with GraphQL generation capabilities. It allows you to automatically convert your Zod schemas into GraphQL queries, mutations, and subscriptions with minimal effort.
+
+## Features
+
+- 🚀 **Generate GraphQL operations** from existing Zod schemas
+- 🔄 **Support for all operation types**: queries, mutations, and subscriptions
+- 🧩 **Works with complex schemas**: nested objects, arrays, circular references
+- 🔍 **Type-safe**: fully typed API with TypeScript
+- 🛠️ **Customizable**: control operation names, variables, and recursion depth
+- 🧠 **Smart**: can infer operation field names from schema type names
+
+## Installation
+
+```bash
+npm install zod2gql
+```
+
+## Quick Start
+
+```tsx
+import { z } from 'zod';
+import { createQuery, createMutation, createSubscription } from 'zod2gql';
+
+// Define a Zod schema
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  age: z.number(),
+});
+
+// Generate a GraphQL query
+const query = createQuery(userSchema, {
+  operationName: 'GetUser',
+  variables: { id: '123' }
+});
+
+console.log(query);
+/*
+query GetUser($id: String!) {
+  user(id: $id) {
+    id
+    name
+    email
+    age
+  }
+}
+*/
+```
+
+## Documentation
+
+Explore the sections below to learn more about using `zod2gql`:
+
+- [Getting Started](/?path=/docs/documentation-getting-started--docs)
+- [Queries](/?path=/docs/documentation-queries--docs)
+- [Mutations](/?path=/docs/documentation-mutations--docs)
+- [Subscriptions](/?path=/docs/documentation-subscriptions--docs)
+- [Advanced Usage](/?path=/docs/documentation-advanced-usage--docs)
+- [API Reference](/?path=/docs/documentation-api-reference--docs)
