@@ -24,33 +24,28 @@ declare module 'zod' {
   }
 }
 
-// Common function to get operation field name
 export const getOperationFieldName = (schema: z.ZodObject<any>, operationName?: string): string => {
   if (operationName) {
-    // If operation name is explicitly provided, use it
     let fieldName = operationName;
-
-    // Handle common prefixes for operations
     const prefixes = ['Get', 'Create', 'Update', 'Delete', 'Subscribe'];
-
     for (const prefix of prefixes) {
       if (fieldName.startsWith(prefix)) {
         fieldName = fieldName.substring(prefix.length);
         break;
       }
     }
-
-    // Convert to camelCase
     return fieldName.charAt(0).toLowerCase() + fieldName.slice(1);
   } else {
-    // Try to infer from schema's _def.typeName if available
-    // This is a best effort approach as Zod doesn't always have this
-    const typeName = (schema as any)._def.typeName || '';
-    if (typeName) {
-      return typeName.charAt(0).toLowerCase() + typeName.slice(1);
+    // Use the description if provided
+    if (schema.description) {
+      return schema.description.charAt(0).toLowerCase() + schema.description.slice(1);
     }
 
-    // Last resort: return empty string
+    // Fallback to the internal typeName if description is not set
+    const typeName = (schema as any)._def.typeName || '';
+    if (typeName && typeName !== 'ZodObject') {
+      return typeName.charAt(0).toLowerCase() + typeName.slice(1);
+    }
     return '';
   }
 };
@@ -195,4 +190,4 @@ z.ZodObject.prototype.toGQL = function (
   }
 };
 
-export type { z };
+export default z;
