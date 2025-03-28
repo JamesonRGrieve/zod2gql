@@ -57,6 +57,79 @@ query($id: String!) {
   `}
 />
 
+## Working with Array Schemas and Pluralization
+
+The library automatically pluralizes field names when working with array schemas:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+// Create a schema with a type name
+const productSchema = withTypeName(
+  z.object({
+    id: z.string(),
+    name: z.string(),
+    price: z.number(),
+  }),
+  'Product'
+);
+
+// Create an array schema for querying multiple products
+const productsQuery = z.array(productSchema).toGQL(GQLType.Query, {
+  variables: { 
+    category: 'electronics',
+    limit: 20,
+    sortBy: 'price'
+  }
+});
+
+console.log(productsQuery);
+/* Output:
+query($category: String!, $limit: Int!, $sortBy: String!) {
+  products(category: $category, limit: $limit, sortBy: $sortBy) {
+    id
+    name
+    price
+  }
+}
+*/
+
+// For bulk operations
+const bulkCreateMutation = z.array(productSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    products: [
+      { name: 'Laptop', price: 999.99 },
+      { name: 'Phone', price: 599.99 }
+    ]
+  },
+  inputTypeMap: {
+    products: '[ProductInput!]'
+  }
+});
+
+console.log(bulkCreateMutation);
+/* Output:
+mutation($products: [ProductInput!]!) {
+  createProducts(products: $products) {
+    id
+    name
+    price
+  }
+}
+*/
+  `}
+/>
+
+The pluralization works with most English nouns, applying common rules like:
+- For words ending in 'y', change to 'ies' (e.g., "category" → "categories")
+- For words ending in 's', 'x', 'ch', 'sh', add 'es' (e.g., "box" → "boxes")
+- For regular nouns, add 's' (e.g., "product" → "products")
+
 ## Custom Recursion Depth
 
 For complex schemas with circular references or deep nesting, you can control the recursion depth:
@@ -136,6 +209,59 @@ const mutation = createMutation(orderResponseSchema, {
   `}
 />
 
+## Batch Operations with Array Schemas
+
+Array schemas are particularly useful for batch operations:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+// Define user schema
+const userSchema = withTypeName(z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  isActive: z.boolean(),
+}), 'User');
+
+// Batch create users
+const batchCreateMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
+  operationName: 'CreateUsers',
+  variables: {
+    users: [
+      { name: 'John', email: 'john@example.com', isActive: true },
+      { name: 'Jane', email: 'jane@example.com', isActive: true }
+    ]
+  },
+  inputTypeMap: {
+    users: '[UserInput!]'
+  }
+});
+
+// Batch update users
+const batchUpdateMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
+  operationName: 'UpdateUsersStatus',
+  variables: {
+    ids: ['user1', 'user2', 'user3'],
+    isActive: false
+  }
+});
+
+// Batch delete users
+const batchDeleteMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
+  operationName: 'DeleteUsers',
+  variables: {
+    ids: ['user1', 'user2', 'user3']
+  }
+});
+  `}
+/>
+
 ## Using with GraphQL Client Libraries
 
 `zod2gql` works well with GraphQL client libraries like Apollo Client or urql:
@@ -176,6 +302,83 @@ function UserProfile({ userId }) {
     <div>
       <h2>{data.user.name}</h2>
       <p>{data.user.email}</p>
+    </div>
+  );
+}
+  `}
+/>
+
+## Using Array Schemas with Apollo Client
+
+Here's how to use array schemas with Apollo Client for listing and bulk operations:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+import { useQuery, useMutation } from '@apollo/client';
+import { gql } from 'graphql-tag';
+
+// Define user schema
+const userSchema = withTypeName(z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  isActive: z.boolean(),
+}), 'User');
+
+// Generate a users list query
+const USERS_QUERY = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { 
+    limit: '$limit', 
+    offset: '$offset',
+    filters: '$filters'
+  }
+});
+
+// Generate a bulk delete mutation
+const DELETE_USERS_MUTATION = z.array(userSchema).toGQL(GQLType.Mutation, {
+  variables: { 
+    ids: '$ids'
+  }
+});
+
+// React component for user list
+function UserList() {
+  const { loading, error, data } = useQuery(gql\`\${USERS_QUERY.replace(/\$limit|\$offset|\$filters/g, (m) => m.substring(1))}\`, {
+    variables: { 
+      limit: 10, 
+      offset: 0,
+      filters: { isActive: true }
+    }
+  });
+  
+  const [deleteUsers] = useMutation(gql\`\${DELETE_USERS_MUTATION.replace('$ids', 'ids')}\`);
+  
+  if (loading) return <p>Loading...</p>;
+  if (error) return <p>Error: {error.message}</p>;
+  
+  const handleBulkDelete = (selectedIds) => {
+    deleteUsers({ 
+      variables: { ids: selectedIds },
+      update: (cache) => {
+        // Update cache after deletion
+      }
+    });
+  };
+  
+  return (
+    <div>
+      <h1>Users</h1>
+      <table>
+        {/* Table content here */}
+      </table>
+      <button onClick={() => handleBulkDelete(['user1', 'user2'])}>
+        Delete Selected
+      </button>
     </div>
   );
 }

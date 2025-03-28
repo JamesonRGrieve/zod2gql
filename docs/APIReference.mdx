@@ -50,7 +50,7 @@ Configuration options for generating GraphQL operations.
 
 ## Extension Methods
 
-### toGQL
+### toGQL for ZodObject
 
 <Source
   language="typescript"
@@ -66,7 +66,25 @@ toGQL(
   `}
 />
 
-The core method that generates a GraphQL operation string from a Zod schema.
+The core method that generates a GraphQL operation string from a Zod object schema.
+
+### toGQL for ZodArray
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+// Extension method added to ZodArray
+toGQL(
+  queryType?: GQLType,      // Type of operation (Query, Mutation, Subscription)
+  options?: ToGQLOptions,   // Configuration options
+  depth?: number            // Current recursion depth (for internal use)
+): string;                  // Returns the GraphQL operation string with pluralized field name
+  `}
+/>
+
+Generates a GraphQL operation string from a Zod array schema, automatically pluralizing the field name.
 
 ## Helper Functions
 
@@ -128,13 +146,29 @@ Helper function to generate a GraphQL subscription.
   format={true}
   code={`
 function getOperationFieldName(
-  schema: z.ZodObject<any>,  // The Zod schema
-  operationName?: string     // Optional operation name to derive field name from
-): string;                   // Returns the inferred field name
+  schema: z.ZodTypeAny,     // The Zod schema (object or array)
+  operationName?: string,   // Optional operation name to derive field name from
+  isArray?: boolean         // Whether to pluralize the field name
+): string;                  // Returns the inferred field name
   `}
 />
 
-Utility function to infer a GraphQL field name from a schema or operation name.
+Utility function to infer a GraphQL field name from a schema or operation name. If the schema is an array or isArray is true, the field name will be pluralized.
+
+### pluralize
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function pluralize(
+  word: string              // The singular word to pluralize
+): string;                  // Returns the pluralized word
+  `}
+/>
+
+Utility function to pluralize a singular word according to basic English rules.
 
 ### formatVariablesDeclaration
 
@@ -167,6 +201,54 @@ function formatFieldArguments(
 
 Formats variables as GraphQL field arguments.
 
+### processArrayQuery
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function processArrayQuery(
+  schema: z.ZodArray<any>,  // The Zod array schema to convert
+  options?: ToGQLOptions    // Configuration options
+): string;                  // Returns the GraphQL query string with pluralized field name
+  `}
+/>
+
+Process a Zod array schema into a GraphQL query with automatic pluralization.
+
+### processArrayMutation
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function processArrayMutation(
+  schema: z.ZodArray<any>,  // The Zod array schema to convert
+  options?: ToGQLOptions    // Configuration options
+): string;                  // Returns the GraphQL mutation string with pluralized field name
+  `}
+/>
+
+Process a Zod array schema into a GraphQL mutation with automatic pluralization.
+
+### processArraySubscription
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+function processArraySubscription(
+  schema: z.ZodArray<any>,  // The Zod array schema to convert
+  options?: ToGQLOptions    // Configuration options
+): string;                  // Returns the GraphQL subscription string with pluralized field name
+  `}
+/>
+
+Process a Zod array schema into a GraphQL subscription with automatic pluralization.
+
 ## Examples
 
 ### Basic Query
@@ -193,6 +275,38 @@ const query = createQuery(userSchema, {
 // Result:
 // query GetUser($id: String!) {
 //   user(id: $id) {
+//     id
+//     name
+//     email
+//   }
+// }
+  `}
+/>
+
+### Query with Array Schema
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+});
+
+// Using array schema for automatic pluralization
+const query = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { limit: 10, offset: 0 }
+});
+
+// Result:
+// query($limit: Int!, $offset: Int!) {
+//   users(limit: $limit, offset: $offset) {
 //     id
 //     name
 //     email
@@ -230,6 +344,46 @@ const mutation = createMutation(userResponseSchema, {
 // Result:
 // mutation CreateUser($userData: UserInput!) {
 //   createUser(userData: $userData) {
+//     id
+//     name
+//     email
+//   }
+// }
+  `}
+/>
+
+### Bulk Mutation with Array Schema
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+const userResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string()
+});
+
+// Bulk create users mutation with automatic pluralization
+const mutation = z.array(userResponseSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    users: [
+      { name: 'John', email: 'john@example.com' },
+      { name: 'Jane', email: 'jane@example.com' }
+    ]
+  },
+  inputTypeMap: {
+    users: '[UserInput!]'
+  }
+});
+
+// Result:
+// mutation($users: [UserInput!]!) {
+//   createUsers(users: $users) {
 //     id
 //     name
 //     email
@@ -285,7 +439,7 @@ const subscription = createSubscription(notificationSchema, {
   `}
 />
 
-### Using toGQL Directly
+### Subscription with Array Schema
 
 <Source
   language="typescript"
@@ -294,25 +448,26 @@ const subscription = createSubscription(notificationSchema, {
   code={`
 import { z } from 'zod';
 import { GQLType } from 'zod2gql';
-import 'zod2gql/query'; // Import the extension
 
-const userSchema = z.object({
+const userPresenceSchema = z.object({
   id: z.string(),
   name: z.string(),
-  email: z.string()
+  status: z.enum(['online', 'away', 'offline']),
+  lastSeen: z.string()
 });
 
-const query = userSchema.toGQL(GQLType.Query, {
-  operationName: 'GetUser',
-  variables: { id: '123' }
+// Subscribe to multiple users in a room with automatic pluralization
+const subscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {
+  variables: { roomId: 'room123' }
 });
 
 // Result:
-// query GetUser($id: String!) {
-//   user(id: $id) {
+// subscription($roomId: String!) {
+//   userPresences(roomId: $roomId) {
 //     id
 //     name
-//     email
+//     status
+//     lastSeen
 //   }
 // }
   `}

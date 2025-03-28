@@ -89,9 +89,73 @@ query GetUser($id: String!) {
   `}
 />
 
+## Array Queries with Automatic Pluralization
+
+The library can automatically handle array schemas and pluralize field names appropriately:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+});
+
+// Using array schema for automatic pluralization
+const query = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { limit: 10, offset: 0 }
+});
+
+console.log(query);
+/* Output:
+query($limit: Int!, $offset: Int!) {
+  users(limit: $limit, offset: $offset) {
+    id
+    name
+    email
+  }
+}
+*/
+  `}
+/>
+
+Notice how the field name `user` was automatically pluralized to `users` when using an array schema. 
+This makes it more intuitive to create queries for lists of resources.
+
+You can still provide an explicit operation name if needed:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const query = z.array(userSchema).toGQL(GQLType.Query, {
+  operationName: 'GetUsers',
+  variables: { limit: 10, offset: 0 }
+});
+
+console.log(query);
+/* Output:
+query GetUsers($limit: Int!, $offset: Int!) {
+  users(limit: $limit, offset: $offset) {
+    id
+    name
+    email
+  }
+}
+*/
+  `}
+/>
+
 ## Query with Arrays
 
-Arrays in Zod schemas are also properly handled:
+Arrays within Zod schemas are also properly handled:
 
 <Source
   language="typescript"
@@ -272,9 +336,9 @@ query GetProduct($id: String!) {
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-query--complex-query" />
+  <Story id="graphql-query--users-array-query" />
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-query--circular-query" />
+  <Story id="graphql-query--get-users-explicit-name-query" />
 </Canvas>

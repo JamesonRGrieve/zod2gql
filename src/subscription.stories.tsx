@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react';
 import { expect, within } from '@storybook/test';
 import React from 'react';
 import { z } from 'zod';
-import { ToGQLOptions } from './index';
+import { GQLType, ToGQLOptions } from './index';
 import { createSubscription } from './subscription';
 
 /**
@@ -30,11 +30,14 @@ const SubscriptionDisplay = ({
   options,
   expectedOutput,
 }: {
-  schema: z.ZodObject<any>;
+  schema: z.ZodObject<any> | z.ZodArray<any>;
   options?: ToGQLOptions;
   expectedOutput?: string;
 }) => {
-  const subscription = createSubscription(schema, options);
+  const subscription =
+    typeof schema.toGQL === 'function'
+      ? schema.toGQL(GQLType.Subscription, options)
+      : createSubscription(schema as z.ZodObject<any>, options);
 
   return (
     <div>
@@ -51,7 +54,7 @@ const SubscriptionDisplay = ({
 };
 
 type SubscriptionStoryArgs = {
-  schema: z.ZodObject<any>;
+  schema: z.ZodObject<any> | z.ZodArray<any>;
   options?: ToGQLOptions;
   expectedOutput?: string;
 };
@@ -277,6 +280,65 @@ export const UserPresenceSubscription: Story = {
   },
 };
 
+// New: Multiple users presence subscription with array schema
+export const UsersPresenceSubscription: Story = {
+  args: {
+    schema: z.array(userPresenceSchema),
+    options: {
+      variables: { roomId: 'room123' },
+    },
+    expectedOutput: `subscription($roomId: String!) {
+  userPresences(roomId: $roomId) {
+    id
+    name
+    avatarUrl
+    status
+    lastSeen
+    typing
+    currentRoomId
+  }
+}`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A subscription using array schema for automatic pluralization of the field name.',
+      },
+      source: { type: 'code' },
+    },
+  },
+};
+
+// New: Multiple users presence with explicit operation name
+export const SubscribeUsersPresence: Story = {
+  args: {
+    schema: z.array(userPresenceSchema),
+    options: {
+      operationName: 'SubscribeRoomUsers',
+      variables: { roomId: 'room123' },
+    },
+    expectedOutput: `subscription SubscribeRoomUsers($roomId: String!) {
+  userPresences(roomId: $roomId) {
+    id
+    name
+    avatarUrl
+    status
+    lastSeen
+    typing
+    currentRoomId
+  }
+}`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'An array subscription with explicit operation name and automatic field name pluralization.',
+      },
+      source: { type: 'code' },
+    },
+  },
+};
+
 // User Notifications Subscription
 export const UserNotificationsSubscription: Story = {
   args: {
@@ -287,6 +349,27 @@ export const UserNotificationsSubscription: Story = {
     },
     expectedOutput: `subscription SubscribeUserNotifications($userId: String!) {
   userNotifications(userId: $userId) {
+    id
+    type
+    title
+    message
+    timestamp
+    read
+    userId
+  }
+}`,
+  },
+};
+
+// New: Multiple notifications subscription with array schema
+export const NotificationsSubscription: Story = {
+  args: {
+    schema: z.array(notificationSchema),
+    options: {
+      variables: { userId: 'user123' },
+    },
+    expectedOutput: `subscription($userId: String!) {
+  notifications(userId: $userId) {
     id
     type
     title
@@ -342,6 +425,40 @@ export const ChatRoomMessagesSubscription: Story = {
   },
 };
 
+// New: Chat messages array subscription
+export const ChatMessagesSubscription: Story = {
+  args: {
+    schema: z.array(chatMessageSchema),
+    options: {
+      variables: { roomId: 'room123' },
+    },
+    expectedOutput: `subscription($roomId: String!) {
+  chatMessages(roomId: $roomId) {
+    id
+    content
+    author {
+      id
+      name
+      avatarUrl
+    }
+    timestamp
+    roomId
+    edited
+    reactions
+    attachments {
+      id
+      url
+      fileName
+      fileType
+      fileSize
+      thumbnailUrl
+    }
+    mentions
+  }
+}`,
+  },
+};
+
 // Activity Events Subscription
 export const ActivityEventsSubscription: Story = {
   args: {
@@ -377,6 +494,30 @@ export const StockTickerSubscription: Story = {
     },
     expectedOutput: `subscription SubscribeStockTicker($symbols: StringInput!) {
   stockTicker(symbols: $symbols) {
+    symbol
+    price
+    change
+    changePercent
+    volume
+    timestamp
+    open
+    high
+    low
+    previousClose
+  }
+}`,
+  },
+};
+
+// New: Multiple stock tickers subscription
+export const StockTickersSubscription: Story = {
+  args: {
+    schema: z.array(stockTickerSchema),
+    options: {
+      variables: { symbols: ['AAPL', 'MSFT', 'GOOGL'] },
+    },
+    expectedOutput: `subscription($symbols: StringInput!) {
+  stockTickers(symbols: $symbols) {
     symbol
     price
     change

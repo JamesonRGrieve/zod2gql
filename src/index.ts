@@ -22,11 +22,31 @@ declare module 'zod' {
   interface ZodObject<T> {
     toGQL(queryType?: GQLType, options?: ToGQLOptions, depth?: number): string;
   }
+
+  interface ZodArray<T> {
+    toGQL(queryType?: GQLType, options?: ToGQLOptions, depth?: number): string;
+  }
 }
 
-export const getOperationFieldName = (schema: z.ZodObject<any>, operationName?: string): string => {
+// Helper function to pluralize field names
+export const pluralize = (word: string): string => {
+  if (!word) return '';
+
+  // Simple English pluralization rules
+  if (word.endsWith('y')) {
+    return word.slice(0, -1) + 'ies';
+  } else if (word.endsWith('s') || word.endsWith('x') || word.endsWith('ch') || word.endsWith('sh')) {
+    return word + 'es';
+  } else {
+    return word + 's';
+  }
+};
+
+export const getOperationFieldName = (schema: z.ZodTypeAny, operationName?: string, isArray: boolean = false): string => {
+  let fieldName = '';
+
   if (operationName) {
-    let fieldName = operationName;
+    fieldName = operationName;
     const prefixes = ['Get', 'Create', 'Update', 'Delete', 'Subscribe'];
     for (const prefix of prefixes) {
       if (fieldName.startsWith(prefix)) {
@@ -34,20 +54,31 @@ export const getOperationFieldName = (schema: z.ZodObject<any>, operationName?: 
         break;
       }
     }
-    return fieldName.charAt(0).toLowerCase() + fieldName.slice(1);
-  } else {
-    // Use the description if provided
-    if (schema.description) {
-      return schema.description.charAt(0).toLowerCase() + schema.description.slice(1);
-    }
-
-    // Fallback to the internal typeName if description is not set
-    const typeName = (schema as any)._def.typeName || '';
-    if (typeName && typeName !== 'ZodObject') {
-      return typeName.charAt(0).toLowerCase() + typeName.slice(1);
-    }
-    return '';
+    fieldName = fieldName.charAt(0).toLowerCase() + fieldName.slice(1);
   }
+  // Handle array schema - get element schema name and pluralize
+  else if (schema instanceof z.ZodArray) {
+    const elementSchema = schema._def.type;
+    if (elementSchema instanceof z.ZodObject) {
+      // Get singular name from element schema
+      fieldName = getOperationFieldName(elementSchema);
+      isArray = true;
+    }
+  }
+  // Handle object schema as before
+  else if (schema instanceof z.ZodObject) {
+    if (schema.description) {
+      fieldName = schema.description.charAt(0).toLowerCase() + schema.description.slice(1);
+    } else {
+      const typeName = (schema as any)._def.typeName || '';
+      if (typeName && typeName !== 'ZodObject') {
+        fieldName = typeName.charAt(0).toLowerCase() + typeName.slice(1);
+      }
+    }
+  }
+
+  // Pluralize if it's an array
+  return isArray ? pluralize(fieldName) : fieldName;
 };
 
 // Format variables declaration for GraphQL
@@ -89,6 +120,7 @@ export const formatVariablesDeclaration = (
     })
     .join(', ')})`;
 };
+
 // Format field arguments for GraphQL
 export const formatFieldArguments = (variables?: Record<string, any>): string => {
   if (!variables || Object.keys(variables).length === 0) {
@@ -154,7 +186,75 @@ export const processFields = (
 
   return query;
 };
-// Router function that delegates to the appropriate operation type
+
+// Process array operations
+export function processArrayQuery(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
+  const { operationName, variables, maxDepth = 10 } = options;
+
+  // Get the element schema
+  const elementSchema = schema._def.type;
+
+  // Only proceed if the element is an object
+  if (!(elementSchema instanceof z.ZodObject)) {
+    throw new Error('Array element must be a ZodObject');
+  }
+
+  const operation = operationName ? ` ${operationName}` : '';
+  const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
+  const fieldArgs = formatFieldArguments(variables);
+
+  // Get the pluralized field name
+  const queryField = getOperationFieldName(schema, operationName);
+
+  // Generate the full GraphQL query for array
+  return `${GQLType.Query}${operation}${varsString} {\n  ${queryField}${fieldArgs} {\n${processFields(elementSchema, GQLType.Query, options, 2)}  }\n}`;
+}
+
+export function processArrayMutation(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
+  const { operationName, variables, maxDepth = 10 } = options;
+
+  // Get the element schema
+  const elementSchema = schema._def.type;
+
+  // Only proceed if the element is an object
+  if (!(elementSchema instanceof z.ZodObject)) {
+    throw new Error('Array element must be a ZodObject');
+  }
+
+  const operation = operationName ? ` ${operationName}` : '';
+  const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
+  const fieldArgs = formatFieldArguments(variables);
+
+  // Get the pluralized field name
+  const mutationField = getOperationFieldName(schema, operationName);
+
+  // Generate the full GraphQL mutation for array
+  return `${GQLType.Mutation}${operation}${varsString} {\n  ${mutationField}${fieldArgs} {\n${processFields(elementSchema, GQLType.Mutation, options, 2)}  }\n}`;
+}
+
+export function processArraySubscription(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
+  const { operationName, variables, maxDepth = 10 } = options;
+
+  // Get the element schema
+  const elementSchema = schema._def.type;
+
+  // Only proceed if the element is an object
+  if (!(elementSchema instanceof z.ZodObject)) {
+    throw new Error('Array element must be a ZodObject');
+  }
+
+  const operation = operationName ? ` ${operationName}` : '';
+  const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
+  const fieldArgs = formatFieldArguments(variables);
+
+  // Get the pluralized field name
+  const subscriptionField = getOperationFieldName(schema, operationName);
+
+  // Generate the full GraphQL subscription for array
+  return `${GQLType.Subscription}${operation}${varsString} {\n  ${subscriptionField}${fieldArgs} {\n${processFields(elementSchema, GQLType.Subscription, options, 2)}  }\n}`;
+}
+
+// Router function that delegates to the appropriate operation type for ZodObject
 z.ZodObject.prototype.toGQL = function (
   queryType: GQLType = GQLType.Query,
   options: ToGQLOptions = {},
@@ -175,6 +275,38 @@ z.ZodObject.prototype.toGQL = function (
       return processSubscription(this, options);
     default:
       // Should never hit this with TypeScript, but just in case
+      return '';
+  }
+};
+
+// Router function that delegates to the appropriate operation type for ZodArray
+z.ZodArray.prototype.toGQL = function (
+  queryType: GQLType = GQLType.Query,
+  options: ToGQLOptions = {},
+  depth: number = 0,
+): string {
+  // If we're processing nested fields, return empty for now
+  if (depth > 0) {
+    return '';
+  }
+
+  // Get the element schema
+  const elementSchema = this._def.type;
+
+  // Only proceed if the element is an object
+  if (!(elementSchema instanceof z.ZodObject)) {
+    throw new Error('Array element must be a ZodObject for toGQL');
+  }
+
+  // For root calls, route to the proper handler based on operation type
+  switch (queryType) {
+    case GQLType.Query:
+      return processArrayQuery(this, options);
+    case GQLType.Mutation:
+      return processArrayMutation(this, options);
+    case GQLType.Subscription:
+      return processArraySubscription(this, options);
+    default:
       return '';
   }
 };

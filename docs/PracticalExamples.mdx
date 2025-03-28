@@ -23,7 +23,7 @@ Real-world examples of using `zod2gql` in common scenarios.
 <CodeBlock language="typescript">
 {`
 import { z } from 'zod';
-import { createQuery, createMutation } from 'zod2gql';
+import { createQuery, createMutation, GQLType } from 'zod2gql';
 
 // Define user-related schemas
 const userSchema = z.object({
@@ -48,6 +48,15 @@ const loginResponseSchema = z.object({
 const getUserQuery = createQuery(userSchema, {
   operationName: 'GetUser',
   variables: { id: '$id' }
+});
+
+// List users with array schema and automatic pluralization
+const getUsersQuery = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { 
+    limit: '$limit', 
+    offset: '$offset',
+    role: '$role'
+  }
 });
 
 // Generate mutations
@@ -75,10 +84,35 @@ const registerMutation = createMutation(userSchema, {
   }
 });
 
+// Bulk user creation with array schema
+const bulkRegisterMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
+  operationName: 'BulkRegisterUsers',
+  variables: {
+    users: '$users'
+  },
+  inputTypeMap: {
+    users: '[RegisterUserInput!]'
+  }
+});
+
+// Bulk user status update
+const bulkUpdateStatusMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
+  operationName: 'BulkUpdateUserStatus',
+  variables: {
+    userIds: '$userIds',
+    isActive: '$isActive'
+  }
+});
+
 // Generate subscription
 const userStatusSubscription = createSubscription(userSchema, {
   operationName: 'UserStatusChanged',
   variables: { userId: '$userId' }
+});
+
+// Subscribe to multiple users' status changes
+const usersStatusSubscription = z.array(userSchema).toGQL(GQLType.Subscription, {
+  variables: { organizationId: '$organizationId' }
 });
 `}
 </CodeBlock>
@@ -90,7 +124,7 @@ const userStatusSubscription = createSubscription(userSchema, {
 <CodeBlock language="typescript">
 {`
 import { z } from 'zod';
-import { createQuery, createMutation } from 'zod2gql';
+import { createQuery, createMutation, GQLType } from 'zod2gql';
 
 // Define schemas
 const categorySchema = z.object({
@@ -135,6 +169,16 @@ const getProductQuery = createQuery(productSchema, {
   variables: { slug: '$slug' }
 });
 
+// Get multiple products using array schema
+const getProductsQuery = z.array(productSchema).toGQL(GQLType.Query, {
+  variables: { 
+    categorySlug: '$categorySlug',
+    page: '$page',
+    pageSize: '$pageSize',
+    sortBy: '$sortBy'
+  }
+});
+
 const getCategoryProductsQuery = createQuery(
   z.object({
     category: categorySchema,
@@ -155,6 +199,16 @@ const getCategoryProductsQuery = createQuery(
     }
   }
 );
+
+// Get reviews for a product
+const getProductReviewsQuery = z.array(reviewSchema).toGQL(GQLType.Query, {
+  variables: { 
+    productId: '$productId',
+    limit: '$limit',
+    offset: '$offset',
+    sortBy: '$sortBy'
+  }
+});
 
 // Generate mutations
 const createProductMutation = createMutation(productSchema, {
@@ -177,6 +231,26 @@ const createProductMutation = createMutation(productSchema, {
   }
 });
 
+// Bulk create products mutation
+const bulkCreateProductsMutation = z.array(productSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    products: '$products'
+  },
+  inputTypeMap: {
+    products: '[CreateProductInput!]'
+  }
+});
+
+// Bulk update product inventory
+const bulkUpdateInventoryMutation = z.array(productSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    updates: '$updates'
+  },
+  inputTypeMap: {
+    updates: '[ProductInventoryUpdate!]'
+  }
+});
+
 const createReviewMutation = createMutation(reviewSchema, {
   operationName: 'CreateReview',
   variables: {
@@ -191,6 +265,19 @@ const createReviewMutation = createMutation(reviewSchema, {
     input: 'CreateReviewInput'
   }
 });
+
+// Subscribe to inventory changes
+const productsInventorySubscription = z.array(
+  z.object({
+    productId: z.string(),
+    inventory: z.number(),
+    updatedAt: z.string()
+  })
+).toGQL(GQLType.Subscription, {
+  variables: {
+    categoryId: '$categoryId'
+  }
+});
 `}
 </CodeBlock>
 
@@ -201,7 +288,7 @@ const createReviewMutation = createMutation(reviewSchema, {
 <CodeBlock language="typescript">
 {`
 import { z } from 'zod';
-import { createQuery, createMutation, createSubscription } from 'zod2gql';
+import { createQuery, createMutation, createSubscription, GQLType } from 'zod2gql';
 
 // Define schemas
 const authorSchema = z.object({
@@ -252,26 +339,25 @@ const getPostQuery = createQuery(postSchema, {
   variables: { slug: '$slug' }
 });
 
-const getPostsQuery = createQuery(
-  z.object({
-    posts: z.array(postSchema),
-    pagination: z.object({
-      total: z.number(),
-      page: z.number(),
-      pageSize: z.number(),
-      hasMore: z.boolean(),
-    }),
-  }),
-  {
-    operationName: 'GetPosts',
-    variables: { 
-      page: '$page',
-      pageSize: '$pageSize',
-      tag: '$tag',
-      authorId: '$authorId'
-    }
+// Get list of posts using array schema
+const getPostsQuery = z.array(postSchema).toGQL(GQLType.Query, {
+  variables: { 
+    page: '$page',
+    pageSize: '$pageSize',
+    tag: '$tag',
+    authorId: '$authorId'
   }
-);
+});
+
+// Get comments for a post using array schema
+const getPostCommentsQuery = z.array(commentSchema).toGQL(GQLType.Query, {
+  variables: { 
+    postId: '$postId',
+    limit: '$limit',
+    offset: '$offset',
+    sortBy: '$sortBy'
+  }
+});
 
 // Generate mutations
 const createPostMutation = createMutation(postSchema, {
@@ -291,6 +377,24 @@ const createPostMutation = createMutation(postSchema, {
   }
 });
 
+// Bulk create posts
+const bulkCreatePostsMutation = z.array(postSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    posts: '$posts'
+  },
+  inputTypeMap: {
+    posts: '[CreatePostInput!]'
+  }
+});
+
+// Bulk update post status
+const bulkUpdatePostStatusMutation = z.array(postSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    postIds: '$postIds',
+    status: '$status'
+  }
+});
+
 const createCommentMutation = createMutation(commentSchema, {
   operationName: 'CreateComment',
   variables: {
@@ -299,9 +403,17 @@ const createCommentMutation = createMutation(commentSchema, {
   }
 });
 
+// Bulk moderate comments
+const bulkModerateCommentsMutation = z.array(commentSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    commentIds: '$commentIds',
+    approved: '$approved'
+  }
+});
+
 // Generate subscription
-const newCommentSubscription = createSubscription(commentSchema, {
-  operationName: 'OnNewComment',
+const newCommentsSubscription = z.array(commentSchema).toGQL(GQLType.Subscription, {
+  operationName: 'OnNewComments',
   variables: { postId: '$postId' }
 });
 
@@ -319,7 +431,7 @@ const postUpdateSubscription = createSubscription(postSchema, {
 <CodeBlock language="typescript">
 {`
 import { z } from 'zod';
-import { createQuery, createMutation, createSubscription } from 'zod2gql';
+import { createQuery, createMutation, createSubscription, GQLType } from 'zod2gql';
 
 // Define schemas
 const userPresenceSchema = z.object({
@@ -365,31 +477,21 @@ const channelSchema = z.object({
 });
 
 // Generate queries
-const getChannelsQuery = createQuery(
-  z.object({
-    channels: z.array(channelSchema)
-  }),
-  {
-    operationName: 'GetChannels',
-    variables: { userId: '$userId' }
-  }
-);
+const getChannelsQuery = z.array(channelSchema).toGQL(GQLType.Query, {
+  variables: { userId: '$userId' }
+});
 
-const getChannelMessagesQuery = createQuery(
-  z.object({
-    messages: z.array(messageSchema),
-    channel: channelSchema,
-    members: z.array(userPresenceSchema)
-  }),
-  {
-    operationName: 'GetChannelMessages',
-    variables: { 
-      channelId: '$channelId',
-      limit: '$limit',
-      before: '$before'
-    }
+const getChannelMessagesQuery = z.array(messageSchema).toGQL(GQLType.Query, {
+  variables: { 
+    channelId: '$channelId',
+    limit: '$limit',
+    before: '$before'
   }
-);
+});
+
+const getChannelMembersQuery = z.array(userPresenceSchema).toGQL(GQLType.Query, {
+  variables: { channelId: '$channelId' }
+});
 
 // Generate mutations
 const sendMessageMutation = createMutation(messageSchema, {
@@ -407,12 +509,32 @@ const sendMessageMutation = createMutation(messageSchema, {
   }
 });
 
+// Bulk send messages
+const bulkSendMessagesMutation = z.array(messageSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    messages: '$messages'
+  },
+  inputTypeMap: {
+    messages: '[SendMessageInput!]'
+  }
+});
+
 const createChannelMutation = createMutation(channelSchema, {
   operationName: 'CreateChannel',
   variables: {
     name: '$name',
     type: '$type',
     members: '$members'
+  }
+});
+
+// Bulk create channels
+const bulkCreateChannelsMutation = z.array(channelSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    channels: '$channels'
+  },
+  inputTypeMap: {
+    channels: '[CreateChannelInput!]'
   }
 });
 
@@ -426,8 +548,9 @@ const updateUserPresenceMutation = createMutation(userPresenceSchema, {
 });
 
 // Generate subscriptions
-const messageSubscription = createSubscription(messageSchema, {
-  operationName: 'OnMessage',
+// Subscribe to new messages in a channel
+const messagesSubscription = z.array(messageSchema).toGQL(GQLType.Subscription, {
+  operationName: 'OnMessages',
   variables: { channelId: '$channelId' }
 });
 
@@ -444,8 +567,8 @@ const typingIndicatorSubscription = createSubscription(
   }
 );
 
-const presenceChangedSubscription = createSubscription(userPresenceSchema, {
-  operationName: 'OnPresenceChanged',
+// Subscribe to presence changes for multiple users
+const presenceChangesSubscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {
   variables: { channelId: '$channelId' }
 });
 `}

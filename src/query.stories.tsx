@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react';
 import { expect, within } from '@storybook/test';
 import React from 'react';
 import { z } from 'zod';
-import { ToGQLOptions } from './index';
+import { GQLType, ToGQLOptions } from './index';
 import { createQuery } from './query';
 
 // Import Zod schema and GQL converter
@@ -21,11 +21,14 @@ const QueryDisplay = ({
   options,
   expectedOutput,
 }: {
-  schema: z.ZodObject<any>;
+  schema: z.ZodObject<any> | z.ZodArray<any>;
   options?: ToGQLOptions;
   expectedOutput?: string;
 }) => {
-  const query = createQuery(schema, options);
+  const query =
+    typeof schema.toGQL === 'function'
+      ? schema.toGQL(GQLType.Query, options)
+      : createQuery(schema as z.ZodObject<any>, options);
 
   return (
     <div>
@@ -42,7 +45,7 @@ const QueryDisplay = ({
 };
 
 type QueryStoryArgs = {
-  schema: z.ZodObject<any>;
+  schema: z.ZodObject<any> | z.ZodArray<any>;
   options?: ToGQLOptions;
   expectedOutput?: string;
 };
@@ -313,6 +316,158 @@ export const SimpleQuery: Story = {
     const normalizeString = (str: string) => str.replace(/\s+/g, '');
 
     expect(normalizeString(queryOutput.textContent || '')).toBe(normalizeString(expectedOutput.textContent || ''));
+  },
+};
+
+// New story: Array query with automatic pluralization
+export const UsersArrayQuery: Story = {
+  args: {
+    schema: z.array(userSchema),
+    options: {
+      variables: { limit: 10, offset: 0 },
+    },
+    expectedOutput: `query($limit: Int!, $offset: Int!) {
+  users(limit: $limit, offset: $offset) {
+    id
+    name
+    email
+    age
+    isActive
+    address {
+      street
+      city
+      state
+      zipCode
+      country
+    }
+  }
+}`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A query using array schema for automatic pluralization of the field name.',
+      },
+      source: { type: 'code' },
+    },
+  },
+};
+
+// New story: Array query with explicit operation name
+export const GetUsersExplicitNameQuery: Story = {
+  args: {
+    schema: z.array(userSchema),
+    options: {
+      operationName: 'GetUsers',
+      variables: { limit: 10, offset: 0 },
+    },
+    expectedOutput: `query GetUsers($limit: Int!, $offset: Int!) {
+  users(limit: $limit, offset: $offset) {
+    id
+    name
+    email
+    age
+    isActive
+    address {
+      street
+      city
+      state
+      zipCode
+      country
+    }
+  }
+}`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'An array query with an explicit operation name and automatic field name pluralization.',
+      },
+      source: { type: 'code' },
+    },
+  },
+};
+
+// New story: Complex array query (posts)
+export const GetPostsArrayQuery: Story = {
+  args: {
+    schema: z.array(postSchema),
+    options: {
+      variables: { userId: 'user123', limit: 5 },
+    },
+    expectedOutput: `query($userId: String!, $limit: Int!) {
+  posts(userId: $userId, limit: $limit) {
+    id
+    title
+    content
+    author {
+      id
+      name
+      email
+      age
+      isActive
+      address {
+        street
+        city
+        state
+        zipCode
+        country
+      }
+    }
+    comments {
+      id
+      text
+      author {
+        id
+        name
+        email
+        age
+        isActive
+        address {
+          street
+          city
+          state
+          zipCode
+          country
+        }
+      }
+      createdAt
+      likes
+      replies {
+        id
+        text
+        author {
+          id
+          name
+          email
+          age
+          isActive
+          address {
+            street
+            city
+            state
+            zipCode
+            country
+          }
+        }
+        createdAt
+        likes
+        replies
+      }
+    }
+    tags
+    createdAt
+    updatedAt
+  }
+}`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A complex query using array schema with nested objects and automatic pluralization.',
+      },
+      source: { type: 'code' },
+    },
   },
 };
 

@@ -91,6 +91,45 @@ query GetUser($id: String!) {
   `}
 />
 
+## Array Schemas with Automatic Pluralization
+
+One of the powerful features of `zod2gql` is its ability to handle array schemas and automatically pluralize field names:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+// Define a Zod schema
+const userSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+});
+
+// Create an array schema version for listing users
+const usersQuery = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { limit: 10, offset: 0 }
+});
+
+console.log(usersQuery);
+/* Output:
+query($limit: Int!, $offset: Int!) {
+  users(limit: $limit, offset: $offset) {
+    id
+    name
+    email
+  }
+}
+*/
+  `}
+/>
+
+Notice how the field name is automatically pluralized from `user` to `users` when using an array schema.
+
 ## Using Helper Functions
 
 `zod2gql` provides convenient helper functions for the different GraphQL operation types:
@@ -129,7 +168,7 @@ You can also use the `toGQL` method directly for more control:
   dark
   format={true}
   code={`
-// Using the method directly
+// Using the method directly on object schemas
 const query = userSchema.toGQL(GQLType.Query, {
   operationName: 'GetUser',
   variables: { id: '123' }
@@ -143,6 +182,15 @@ const mutation = userSchema.toGQL(GQLType.Mutation, {
 const subscription = userSchema.toGQL(GQLType.Subscription, {
   operationName: 'UserUpdated',
   variables: { userId: '123' }
+});
+
+// Using the method directly on array schemas
+const usersQuery = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { limit: 10 }
+});
+
+const bulkCreateMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
+  variables: { users: [{name: 'John'}, {name: 'Jane'}] }
 });
   `}
 />
@@ -187,6 +235,21 @@ query($id: String!) {
   }
 }
 */
+
+// For array schemas, the field name "user" will be automatically pluralized to "users"
+const usersQuery = z.array(userSchema).toGQL(GQLType.Query, {
+  variables: { limit: 10 }
+});
+
+console.log(usersQuery);
+/* Output:
+query($limit: Int!) {
+  users(limit: $limit) {
+    id
+    name
+    email
+  }
+}
+*/
   `}
 />
-

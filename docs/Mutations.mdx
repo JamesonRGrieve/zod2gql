@@ -52,6 +52,83 @@ mutation CreateUser($name: String!, $email: String!, $password: String!) {
   `}
 />
 
+## Array Mutations with Automatic Pluralization
+
+The library supports array schemas for mutations, automatically pluralizing field names:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+const userResponseSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  email: z.string(),
+  createdAt: z.string(),
+});
+
+// Bulk create users mutation
+const mutation = z.array(userResponseSchema).toGQL(GQLType.Mutation, {
+  variables: {
+    users: [
+      { name: 'John Doe', email: 'john@example.com' },
+      { name: 'Jane Smith', email: 'jane@example.com' }
+    ]
+  },
+  inputTypeMap: {
+    users: '[UserInput!]'
+  }
+});
+
+console.log(mutation);
+/* Output:
+mutation($users: [UserInput!]!) {
+  createUsers(users: $users) {
+    id
+    name
+    email
+    createdAt
+  }
+}
+*/
+  `}
+/>
+
+Notice how the field name was automatically pluralized to `createUsers` when using an array schema.
+This convention follows GraphQL best practices for bulk operations.
+
+You can also provide an explicit operation name:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+// Bulk delete mutation with explicit operation name
+const mutation = z.array(userSchema).toGQL(GQLType.Mutation, {
+  operationName: 'DeleteUsers',
+  variables: {
+    ids: ['user1', 'user2', 'user3']
+  }
+});
+
+console.log(mutation);
+/* Output:
+mutation DeleteUsers($ids: [String!]!) {
+  deleteUsers(ids: $ids) {
+    id
+    name
+    email
+  }
+}
+*/
+  `}
+/>
+
 ## Input Types in Mutations
 
 For mutations with complex input types, you can use the `inputTypeMap` option:
@@ -282,13 +359,13 @@ mutation CreateUser($userData: UserDataInput!) {
 ## Live Examples
 
 <Canvas>
-  <Story id="graphql-mutation--create-user" />
+  <Story id="graphql-mutation--create-user-mutation" />
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-mutation--create-post-with-input-types" />
+  <Story id="graphql-mutation--bulk-create-users-mutation" />
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-mutation--update-user" />
+  <Story id="graphql-mutation--bulk-delete-users-mutation" />
 </Canvas>

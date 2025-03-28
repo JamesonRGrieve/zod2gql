@@ -2,7 +2,7 @@ import { Meta, StoryObj } from '@storybook/react';
 import { expect, within } from '@storybook/test';
 import React from 'react';
 import { z } from 'zod';
-import { ToGQLOptions } from './index';
+import { GQLType, ToGQLOptions } from './index';
 import { createMutation } from './mutation';
 
 /**
@@ -30,11 +30,14 @@ const MutationDisplay = ({
   options,
   expectedOutput,
 }: {
-  schema: z.ZodObject<any>;
+  schema: z.ZodObject<any> | z.ZodArray<any>;
   options?: ToGQLOptions;
   expectedOutput?: string;
 }) => {
-  const mutation = createMutation(schema, options);
+  const mutation =
+    typeof schema.toGQL === 'function'
+      ? schema.toGQL(GQLType.Mutation, options)
+      : createMutation(schema as z.ZodObject<any>, options);
 
   return (
     <div>
@@ -51,7 +54,7 @@ const MutationDisplay = ({
 };
 
 type MutationStoryArgs = {
-  schema: z.ZodObject<any>;
+  schema: z.ZodObject<any> | z.ZodArray<any>;
   options?: ToGQLOptions;
   expectedOutput?: string;
 };
@@ -237,6 +240,83 @@ export const CreateUserMutation: Story = {
   },
 };
 
+// New: Bulk create users mutation with array schema
+export const BulkCreateUsersMutation: Story = {
+  args: {
+    schema: z.array(createUserResponseSchema),
+    options: {
+      variables: {
+        users: [
+          {
+            name: 'John Doe',
+            email: 'john@example.com',
+          },
+          {
+            name: 'Jane Smith',
+            email: 'jane@example.com',
+          },
+        ],
+      },
+      inputTypeMap: {
+        users: '[UserInput!]',
+      },
+    },
+    expectedOutput: `mutation($users: [UserInput!]!) {
+  createUsers(users: $users) {
+    id
+    name
+    email
+    createdAt
+  }
+}`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A bulk mutation using array schema for automatic pluralization of the field name.',
+      },
+      source: { type: 'code' },
+    },
+  },
+};
+
+// New: Bulk delete mutation with array schema
+export const BulkDeleteUsersMutation: Story = {
+  args: {
+    schema: z.array(userSchema),
+    options: {
+      operationName: 'DeleteUsers',
+      variables: {
+        ids: ['user1', 'user2', 'user3'],
+      },
+    },
+    expectedOutput: `mutation DeleteUsers($ids: [String!]!) {
+  deleteUsers(ids: $ids) {
+    id
+    name
+    email
+    age
+    isActive
+    address {
+      street
+      city
+      state
+      zipCode
+      country
+    }
+  }
+}`,
+  },
+  parameters: {
+    docs: {
+      description: {
+        story: 'A bulk deletion mutation with array schema and explicit operation name.',
+      },
+      source: { type: 'code' },
+    },
+  },
+};
+
 // Update User Mutation
 export const UpdateUserMutation: Story = {
   args: {
@@ -278,6 +358,41 @@ export const CreatePostMutation: Story = {
     },
     expectedOutput: `mutation CreatePost($title: String!, $content: String!, $authorId: String!, $published: Boolean!) {
   createPost(title: $title, content: $content, authorId: $authorId, published: $published) {
+    id
+    title
+    content
+    authorId
+    published
+    createdAt
+  }
+}`,
+  },
+};
+
+// New: Bulk create posts mutation with array schema
+export const BulkCreatePostsMutation: Story = {
+  args: {
+    schema: z.array(createPostResponseSchema),
+    options: {
+      variables: {
+        posts: [
+          {
+            title: 'First Post',
+            content: 'Content of first post',
+            authorId: 'user123',
+            published: true,
+          },
+          {
+            title: 'Second Post',
+            content: 'Content of second post',
+            authorId: 'user123',
+            published: false,
+          },
+        ],
+      },
+    },
+    expectedOutput: `mutation($posts: [PostsInput!]!) {
+  createPosts(posts: $posts) {
     id
     title
     content

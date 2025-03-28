@@ -18,6 +18,7 @@ import { createSubscription } from '../src/subscription';
 
 - 🚀 **Generate GraphQL operations** from existing Zod schemas
 - 🔄 **Support for all operation types**: queries, mutations, and subscriptions
+- 📚 **Array schema support** with automatic field name pluralization
 - 🧩 **Works with complex schemas**: nested objects, arrays, circular references
 - 🔍 **Type-safe**: fully typed API with TypeScript
 - 🛠️ **Customizable**: control operation names, variables, and recursion depth
@@ -53,6 +54,23 @@ console.log(query);
 /*
 query GetUser($id: String!) {
   user(id: $id) {
+    id
+    name
+    email
+    age
+  }
+}
+*/
+
+// Using array schema with automatic pluralization
+const usersQuery = z.array(userSchema).toGQL('query', {
+  variables: { limit: 10 }
+});
+
+console.log(usersQuery);
+/*
+query($limit: Int!) {
+  users(limit: $limit) {
     id
     name
     email

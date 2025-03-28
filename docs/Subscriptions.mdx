@@ -50,6 +50,73 @@ subscription SubscribeUserNotifications($userId: String!) {
   `}
 />
 
+## Array Subscriptions with Automatic Pluralization
+
+You can subscribe to arrays of data with automatic field name pluralization:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+import { z } from 'zod';
+import { GQLType } from 'zod2gql';
+
+const userPresenceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  status: z.enum(['online', 'away', 'offline']),
+  lastSeen: z.string(),
+});
+
+// Subscribe to multiple users' presence
+const subscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {
+  variables: { roomId: 'room123' }
+});
+
+console.log(subscription);
+/* Output:
+subscription($roomId: String!) {
+  userPresences(roomId: $roomId) {
+    id
+    name
+    status
+    lastSeen
+  }
+}
+*/
+  `}
+/>
+
+The field name `userPresence` is automatically pluralized to `userPresences` when using an array schema.
+This makes it intuitive to create subscriptions for lists of real-time data.
+
+You can also provide an explicit operation name with array schemas:
+
+<Source
+  language="typescript"
+  dark
+  format={true}
+  code={`
+const subscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {
+  operationName: 'SubscribeRoomUsers',
+  variables: { roomId: 'room123' }
+});
+
+console.log(subscription);
+/* Output:
+subscription SubscribeRoomUsers($roomId: String!) {
+  userPresences(roomId: $roomId) {
+    id
+    name
+    status
+    lastSeen
+  }
+}
+*/
+  `}
+/>
+
 ## Real-time Data Subscriptions
 
 Subscriptions are often used for real-time data updates:
@@ -290,9 +357,9 @@ subscription SubscribeChatRoom($roomId: String!) {
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-subscription--chat-room-messages" />
+  <Story id="graphql-subscription--users-presence-subscription" />
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-subscription--inferred-subscription-operation" />
+  <Story id="graphql-subscription--subscribe-users-presence" />
 </Canvas>
