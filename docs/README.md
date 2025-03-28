@@ -295,7 +295,3 @@ createQuery(schema: z.ZodObject<any>, options?: ToGQLOptions): string;
 createMutation(schema: z.ZodObject<any>, options?: ToGQLOptions): string;
 createSubscription(schema: z.ZodObject<any>, options?: ToGQLOptions): string;
 ```
-
-## License
-
-MIT © [Your Name]
