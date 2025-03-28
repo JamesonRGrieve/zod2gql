@@ -61,27 +61,34 @@ export const formatVariablesDeclaration = (
 
   return `(${Object.entries(variables)
     .map(([key, value]) => {
-      // Use input type map if provided
+      // Prioritize input type map
       if (inputTypeMap && inputTypeMap[key]) {
         return `$${key}: ${inputTypeMap[key]}!`;
       }
 
-      // Otherwise determine the type based on the value
-      let type = 'String';
-      if (typeof value === 'number') {
-        type = 'Int';
-      }
-      if (typeof value === 'boolean') {
-        type = 'Boolean';
-      }
-      if (typeof value === 'object' && value !== null) {
-        type = `${key.charAt(0).toUpperCase() + key.slice(1)}Input`;
-      }
-      return `$${key}: ${type}!`;
+      // More sophisticated type inference
+      const inferType = (val: any): string => {
+        if (val === null) return 'String';
+        if (Array.isArray(val)) {
+          const elementType = val.length > 0 ? inferType(val[0]) : 'String';
+          return `[${elementType}]`;
+        }
+        switch (typeof val) {
+          case 'number':
+            return Number.isInteger(val) ? 'Int' : 'Float';
+          case 'boolean':
+            return 'Boolean';
+          case 'object':
+            return `${key.charAt(0).toUpperCase() + key.slice(1)}Input`;
+          default:
+            return 'String';
+        }
+      };
+
+      return `$${key}: ${inferType(value)}!`;
     })
     .join(', ')})`;
 };
-
 // Format field arguments for GraphQL
 export const formatFieldArguments = (variables?: Record<string, any>): string => {
   if (!variables || Object.keys(variables).length === 0) {
@@ -93,7 +100,6 @@ export const formatFieldArguments = (variables?: Record<string, any>): string =>
     .join(', ')})`;
 };
 
-// Process fields recursively - shared logic across operation types
 export const processFields = (
   schema: z.ZodObject<any>,
   queryType: GQLType,
@@ -113,50 +119,34 @@ export const processFields = (
   for (const [key, value] of Object.entries(shape)) {
     // Process the schema based on its type
     const processSchema = (schema: z.ZodTypeAny, fieldName: string) => {
+      // Unwrap Optional and Nullable types
+      const unwrappedSchema =
+        schema instanceof z.ZodOptional || schema instanceof z.ZodNullable ? schema._def.innerType : schema;
+
       // Handle ZodObject recursively
-      if (schema instanceof z.ZodObject) {
-        query += `${indent}${fieldName} {\n${processFields(schema, queryType, options, depth + 1)}${indent}}\n`;
+      if (unwrappedSchema instanceof z.ZodObject) {
+        query += `${indent}${fieldName} {\n${processFields(unwrappedSchema, queryType, options, depth + 1)}${indent}}\n`;
       }
-      // Handle ZodArray with proper expansion of nested types
-      else if (schema instanceof z.ZodArray) {
-        const elementType = schema._def.type;
-        if (elementType && typeof elementType === 'object' && 'toJSON' in elementType) {
-          processSchema(elementType as z.ZodTypeAny, fieldName);
+      // Handle ZodArray with nested types
+      else if (unwrappedSchema instanceof z.ZodArray) {
+        const elementType = unwrappedSchema._def.type;
+
+        // If array element is an object, expand its fields
+        if (elementType instanceof z.ZodObject) {
+          query += `${indent}${fieldName} {\n${processFields(elementType, queryType, options, depth + 1)}${indent}}\n`;
         } else {
           query += `${indent}${fieldName}\n`;
         }
       }
-      // Handle ZodLazy - for circular references
-      else if (schema instanceof z.ZodLazy) {
-        const innerType = schema._def.getter();
-        if (innerType && typeof innerType === 'object' && 'toJSON' in innerType) {
-          processSchema(innerType as z.ZodTypeAny, fieldName);
-        } else {
-          query += `${indent}${fieldName}\n`;
-        }
-      }
-      // Handle ZodOptional and ZodNullable by unwrapping them
-      else if (schema instanceof z.ZodOptional || schema instanceof z.ZodNullable) {
-        const innerType = schema._def.innerType;
-        if (innerType && typeof innerType === 'object' && 'toJSON' in innerType) {
-          processSchema(innerType as z.ZodTypeAny, fieldName);
-        } else {
-          query += `${indent}${fieldName}\n`;
-        }
-      }
-      // Handle ZodUnion and ZodEnum
-      else if (schema instanceof z.ZodUnion || schema instanceof z.ZodEnum) {
-        query += `${indent}${fieldName}\n`;
-      }
-      // Handle primitive types
+      // Other type handling remains the same
       else {
         query += `${indent}${fieldName}\n`;
       }
     };
 
-    // Ensure value is a valid Zod type before processing
-    if (value && typeof value === 'object' && 'toJSON' in value) {
-      processSchema(value as unknown as z.ZodTypeAny, key);
+    // Improved type checking for Zod schemas
+    if (value instanceof z.ZodType) {
+      processSchema(value, key);
     } else {
       query += `${indent}${key}\n`;
     }
@@ -164,7 +154,6 @@ export const processFields = (
 
   return query;
 };
-
 // Router function that delegates to the appropriate operation type
 z.ZodObject.prototype.toGQL = function (
   queryType: GQLType = GQLType.Query,
