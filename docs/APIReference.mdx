@@ -5,7 +5,7 @@ import { processMutation } from '../src/mutation';
 import { processQuery } from '../src/query';
 import { processSubscription } from '../src/subscription';
 
-<Meta title="Documentation/API Reference" />
+<Meta title='Documentation/API Reference' />
 
 # API Reference
 
@@ -16,7 +16,7 @@ Complete reference for the `zod2gql` API, including types, methods, and configur
 ### GQLType Enum
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -33,7 +33,7 @@ Used to specify the type of GraphQL operation when calling the `toGQL` method.
 ### ToGQLOptions Interface
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -66,7 +66,7 @@ const userSchema = z.object({
 
 // The name 'User' will be used for field name inference
 // resulting in field name 'user' in GraphQL operations
-  `}
+`}
 />
 
 The `describe()` method is the preferred way to set a schema name for field name inference.
@@ -76,7 +76,7 @@ The `describe()` method is the preferred way to set a schema name for field name
 ### toGQL for ZodObject
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -94,7 +94,7 @@ The core method that generates a GraphQL operation string from a Zod object sche
 ### toGQL for ZodArray
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -114,7 +114,7 @@ Generates a GraphQL operation string from a Zod array schema, automatically plur
 ### createQuery
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -130,7 +130,7 @@ Helper function to generate a GraphQL query.
 ### createMutation
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -146,7 +146,7 @@ Helper function to generate a GraphQL mutation.
 ### createSubscription
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -164,7 +164,7 @@ Helper function to generate a GraphQL subscription.
 ### getOperationFieldName
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -181,7 +181,7 @@ Utility function to infer a GraphQL field name from a schema or operation name. 
 ### pluralize
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -196,7 +196,7 @@ Utility function to pluralize a singular word according to basic English rules.
 ### formatVariablesDeclaration
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -212,7 +212,7 @@ Formats variables as GraphQL variable declarations.
 ### formatFieldArguments
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -227,7 +227,7 @@ Formats variables as GraphQL field arguments.
 ### processArrayQuery
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -243,7 +243,7 @@ Process a Zod array schema into a GraphQL query with automatic pluralization.
 ### processArrayMutation
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -259,7 +259,7 @@ Process a Zod array schema into a GraphQL mutation with automatic pluralization.
 ### processArraySubscription
 
 <Source
-  language="typescript"
+  language='typescript'
   dark
   format={true}
   code={`
@@ -285,25 +285,25 @@ import { z } from 'zod';
 import { createQuery } from 'zod2gql';
 
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string()
+id: z.string(),
+name: z.string(),
+email: z.string()
 }).describe('User'); // Set schema name using describe()
 
 const query = createQuery(userSchema, {
-  operationName: 'GetUser',
-  variables: { id: '123' }
+operationName: 'GetUser',
+variables: { id: '123' }
 });
 
 // Result:
 // query GetUser($id: String!) {
-//   user(id: $id) {
-//     id
-//     name
-//     email
-//   }
+// user(id: $id) {
+// id
+// name
+// email
 // }
-  `}
+// }
+`}
 />
 
 ### Query with Array Schema
@@ -317,25 +317,25 @@ import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string()
+id: z.string(),
+name: z.string(),
+email: z.string()
 }).describe('User'); // Set schema name using describe()
 
 // Using array schema for automatic pluralization
 const query = z.array(userSchema).toGQL(GQLType.Query, {
-  variables: { limit: 10, offset: 0 }
+variables: { limit: 10, offset: 0 }
 });
 
 // Result:
 // query($limit: Int!, $offset: Int!) {
-//   users(limit: $limit, offset: $offset) {
-//     id
-//     name
-//     email
-//   }
+// users(limit: $limit, offset: $offset) {
+// id
+// name
+// email
 // }
-  `}
+// }
+`}
 />
 
 ### Mutation with Input Types
@@ -349,30 +349,30 @@ import { z } from 'zod';
 import { createMutation } from 'zod2gql';
 
 const userResponseSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string()
+id: z.string(),
+name: z.string(),
+email: z.string()
 }).describe('User');
 
 const mutation = createMutation(userResponseSchema, {
-  operationName: 'CreateUser',
-  variables: {
-    userData: { name: 'John', email: 'john@example.com' }
-  },
-  inputTypeMap: {
-    userData: 'UserInput'
-  }
+operationName: 'CreateUser',
+variables: {
+userData: { name: 'John', email: 'john@example.com' }
+},
+inputTypeMap: {
+userData: 'UserInput'
+}
 });
 
 // Result:
 // mutation CreateUser($userData: UserInput!) {
-//   createUser(userData: $userData) {
-//     id
-//     name
-//     email
-//   }
+// createUser(userData: $userData) {
+// id
+// name
+// email
 // }
-  `}
+// }
+`}
 />
 
 ### Bulk Mutation with Array Schema
@@ -386,33 +386,33 @@ import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 
 const userResponseSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string()
+id: z.string(),
+name: z.string(),
+email: z.string()
 }).describe('User'); // Set schema name using describe()
 
 // Bulk create users mutation with automatic pluralization
 const mutation = z.array(userResponseSchema).toGQL(GQLType.Mutation, {
-  variables: {
-    users: [
-      { name: 'John', email: 'john@example.com' },
-      { name: 'Jane', email: 'jane@example.com' }
-    ]
-  },
-  inputTypeMap: {
-    users: '[UserInput!]'
-  }
+variables: {
+users: [
+{ name: 'John', email: 'john@example.com' },
+{ name: 'Jane', email: 'jane@example.com' }
+]
+},
+inputTypeMap: {
+users: '[UserInput!]'
+}
 });
 
 // Result:
 // mutation($users: [UserInput!]!) {
-//   createUsers(users: $users) {
-//     id
-//     name
-//     email
-//   }
+// createUsers(users: $users) {
+// id
+// name
+// email
 // }
-  `}
+// }
+`}
 />
 
 ### Subscription with Depth Limit
@@ -426,40 +426,40 @@ import { z } from 'zod';
 import { createSubscription } from 'zod2gql';
 
 const notificationSchema = z.object({
-  id: z.string(),
-  message: z.string(),
-  user: z.object({
-    id: z.string(),
-    name: z.string(),
-    profile: z.object({
-      avatar: z.string(),
-      bio: z.string()
-    })
-  })
+id: z.string(),
+message: z.string(),
+user: z.object({
+id: z.string(),
+name: z.string(),
+profile: z.object({
+avatar: z.string(),
+bio: z.string()
+})
+})
 }).describe('Notification');
 
 const subscription = createSubscription(notificationSchema, {
-  operationName: 'SubscribeNotifications',
-  variables: { userId: '123' },
-  maxDepth: 3 // Limit nesting depth
+operationName: 'SubscribeNotifications',
+variables: { userId: '123' },
+maxDepth: 3 // Limit nesting depth
 });
 
 // Result:
 // subscription SubscribeNotifications($userId: String!) {
-//   notification(userId: $userId) {
-//     id
-//     message
-//     user {
-//       id
-//       name
-//       profile {
-//         avatar
-//         bio
-//       }
-//     }
-//   }
+// notification(userId: $userId) {
+// id
+// message
+// user {
+// id
+// name
+// profile {
+// avatar
+// bio
 // }
-  `}
+// }
+// }
+// }
+`}
 />
 
 ### Subscription with Array Schema
@@ -473,25 +473,25 @@ import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 
 const userPresenceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  status: z.enum(['online', 'away', 'offline']),
-  lastSeen: z.string()
+id: z.string(),
+name: z.string(),
+status: z.enum(['online', 'away', 'offline']),
+lastSeen: z.string()
 }).describe('UserPresence'); // Set schema name using describe()
 
 // Subscribe to multiple users in a room with automatic pluralization
 const subscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {
-  variables: { roomId: 'room123' }
+variables: { roomId: 'room123' }
 });
 
 // Result:
 // subscription($roomId: String!) {
-//   userPresences(roomId: $roomId) {
-//     id
-//     name
-//     status
-//     lastSeen
-//   }
+// userPresences(roomId: $roomId) {
+// id
+// name
+// status
+// lastSeen
 // }
-  `}
+// }
+`}
 />

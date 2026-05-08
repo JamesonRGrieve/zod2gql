@@ -13,7 +13,7 @@ export enum GQLType {
 // Define interface for toGQL options
 export interface ToGQLOptions {
   operationName?: string;
-  variables?: Record<string, any>;
+  variables?: Record<string, unknown>;
   maxDepth?: number;
   inputTypeMap?: Record<string, string>;
 }
@@ -46,89 +46,94 @@ export const pluralize = (word: string): string => {
   }
 };
 
-export const getOperationFieldName = (schema: z.ZodTypeAny, operationName?: string, isArray = false): string => {
-  let fieldName = '';
+const OPERATION_PREFIXES = ['Get', 'Create', 'Update', 'Delete', 'Subscribe'] as const;
 
-  if (operationName) {
-    fieldName = operationName;
-    const prefixes = ['Get', 'Create', 'Update', 'Delete', 'Subscribe'];
-    for (const prefix of prefixes) {
-      if (fieldName.startsWith(prefix)) {
-        fieldName = fieldName.substring(prefix.length);
-        break;
-      }
+const lowercaseFirst = (s: string): string => (s ? s.charAt(0).toLowerCase() + s.slice(1) : '');
+
+const fieldNameFromOperation = (operationName: string): string => {
+  let stripped = operationName;
+  for (const prefix of OPERATION_PREFIXES) {
+    if (stripped.startsWith(prefix)) {
+      stripped = stripped.substring(prefix.length);
+      break;
     }
-    fieldName = fieldName.charAt(0).toLowerCase() + fieldName.slice(1);
   }
-  // Handle array schema - get element schema name and pluralize
-  else if (schema instanceof z.ZodArray) {
+  return lowercaseFirst(stripped);
+};
+
+const fieldNameFromObject = (schema: z.AnyZodObject): string => {
+  if (schema.description) {
+    return lowercaseFirst(schema.description);
+  }
+  const typeName = (schema._def as { typeName?: string }).typeName ?? '';
+  if (typeName && typeName !== 'ZodObject') {
+    return lowercaseFirst(typeName);
+  }
+  return '';
+};
+
+export const getOperationFieldName = (schema: z.ZodTypeAny, operationName?: string, isArrayHint = false): string => {
+  if (operationName) {
+    return fieldNameFromOperation(operationName);
+  }
+  if (schema instanceof z.ZodArray) {
     const elementSchema = schema._def.type;
     if (elementSchema instanceof z.ZodObject) {
-      // Get singular name from element schema
-      fieldName = getOperationFieldName(elementSchema);
-      isArray = true;
+      return pluralize(getOperationFieldName(elementSchema));
     }
+    return '';
   }
-  // Handle object schema as before
-  else if (schema instanceof z.ZodObject) {
-    if (schema.description) {
-      fieldName = schema.description.charAt(0).toLowerCase() + schema.description.slice(1);
-    } else {
-      const typeName = (schema as any)._def.typeName || '';
-      if (typeName && typeName !== 'ZodObject') {
-        fieldName = typeName.charAt(0).toLowerCase() + typeName.slice(1);
-      }
-    }
+  if (schema instanceof z.ZodObject) {
+    const name = fieldNameFromObject(schema);
+    return isArrayHint ? pluralize(name) : name;
   }
+  return '';
+};
 
-  // Pluralize if it's an array
-  return isArray ? pluralize(fieldName) : fieldName;
+const inferGraphQLType = (key: string, val: unknown): string => {
+  if (val === null) {
+    return 'String';
+  }
+  if (Array.isArray(val)) {
+    const elementType = val.length > 0 ? inferGraphQLType(key, val[0]) : 'String';
+    return `[${elementType}]`;
+  }
+  switch (typeof val) {
+    case 'number':
+      return Number.isInteger(val) ? 'Int' : 'Float';
+    case 'boolean':
+      return 'Boolean';
+    case 'object':
+      return `${key.charAt(0).toUpperCase() + key.slice(1)}Input`;
+    default:
+      return 'String';
+  }
 };
 
 // Format variables declaration for GraphQL
 export const formatVariablesDeclaration = (
-  variables?: Record<string, any>,
+  variables?: Record<string, unknown>,
   inputTypeMap?: Record<string, string>,
 ): string => {
   if (!variables || Object.keys(variables).length === 0) {
     return '';
   }
 
+  const inputTypes = new Map(Object.entries(inputTypeMap ?? {}));
+
   return `(${Object.entries(variables)
     .map(([key, value]) => {
-      // Prioritize input type map
-      if (inputTypeMap && inputTypeMap[key]) {
-        return `$${key}: ${inputTypeMap[key]}!`;
+      const mapped = inputTypes.get(key);
+      if (mapped) {
+        return `$${key}: ${mapped}!`;
       }
-
-      // More sophisticated type inference
-      const inferType = (val: any): string => {
-        if (val === null) {
-          return 'String';
-        }
-        if (Array.isArray(val)) {
-          const elementType = val.length > 0 ? inferType(val[0]) : 'String';
-          return `[${elementType}]`;
-        }
-        switch (typeof val) {
-          case 'number':
-            return Number.isInteger(val) ? 'Int' : 'Float';
-          case 'boolean':
-            return 'Boolean';
-          case 'object':
-            return `${key.charAt(0).toUpperCase() + key.slice(1)}Input`;
-          default:
-            return 'String';
-        }
-      };
-
-      return `$${key}: ${inferType(value)}!`;
+      return `$${key}: ${inferGraphQLType(key, value)}!`;
     })
     .join(', ')})`;
 };
 
 // Format field arguments for GraphQL
-export const formatFieldArguments = (variables?: Record<string, any>): string => {
+export const formatFieldArguments = (variables?: Record<string, unknown>): string => {
   if (!variables || Object.keys(variables).length === 0) {
     return '';
   }
@@ -136,6 +141,29 @@ export const formatFieldArguments = (variables?: Record<string, any>): string =>
   return `(${Object.entries(variables)
     .map(([key]) => `${key}: $${key}`)
     .join(', ')})`;
+};
+
+const renderField = (
+  fieldSchema: z.ZodTypeAny,
+  fieldName: string,
+  queryType: GQLType,
+  options: ToGQLOptions,
+  depth: number,
+  indent: string,
+): string => {
+  const unwrappedSchema =
+    fieldSchema instanceof z.ZodOptional || fieldSchema instanceof z.ZodNullable ? fieldSchema._def.innerType : fieldSchema;
+
+  if (unwrappedSchema instanceof z.ZodObject) {
+    return `${indent}${fieldName} {\n${processFields(unwrappedSchema, queryType, options, depth + 1)}${indent}}\n`;
+  }
+  if (unwrappedSchema instanceof z.ZodArray) {
+    const elementType = unwrappedSchema._def.type;
+    if (elementType instanceof z.ZodObject) {
+      return `${indent}${fieldName} {\n${processFields(elementType, queryType, options, depth + 1)}${indent}}\n`;
+    }
+  }
+  return `${indent}${fieldName}\n`;
 };
 
 export const processFields = (schema: z.AnyZodObject, queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string => {
@@ -146,40 +174,12 @@ export const processFields = (schema: z.AnyZodObject, queryType: GQLType, option
   }
 
   const indent = '  '.repeat(depth);
-  let query = '';
   const shape = schema._def.shape();
+  let query = '';
 
   for (const [key, value] of Object.entries(shape)) {
-    // Process the schema based on its type
-    const processSchema = (schema: z.ZodTypeAny, fieldName: string) => {
-      // Unwrap Optional and Nullable types
-      const unwrappedSchema =
-        schema instanceof z.ZodOptional || schema instanceof z.ZodNullable ? schema._def.innerType : schema;
-
-      // Handle ZodObject recursively
-      if (unwrappedSchema instanceof z.ZodObject) {
-        query += `${indent}${fieldName} {\n${processFields(unwrappedSchema, queryType, options, depth + 1)}${indent}}\n`;
-      }
-      // Handle ZodArray with nested types
-      else if (unwrappedSchema instanceof z.ZodArray) {
-        const elementType = unwrappedSchema._def.type;
-
-        // If array element is an object, expand its fields
-        if (elementType instanceof z.ZodObject) {
-          query += `${indent}${fieldName} {\n${processFields(elementType, queryType, options, depth + 1)}${indent}}\n`;
-        } else {
-          query += `${indent}${fieldName}\n`;
-        }
-      }
-      // Other type handling remains the same
-      else {
-        query += `${indent}${fieldName}\n`;
-      }
-    };
-
-    // Improved type checking for Zod schemas
     if (value instanceof z.ZodType) {
-      processSchema(value, key);
+      query += renderField(value, key, queryType, options, depth, indent);
     } else {
       query += `${indent}${key}\n`;
     }
@@ -188,71 +188,32 @@ export const processFields = (schema: z.AnyZodObject, queryType: GQLType, option
   return query;
 };
 
-// Process array operations
-export function processArrayQuery(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
+const ARRAY_ELEMENT_NOT_OBJECT_ERROR = 'Array element must be a ZodObject';
+
+const processArrayOperation = (schema: z.ZodArray<z.ZodTypeAny>, queryType: GQLType, options: ToGQLOptions): string => {
   const { operationName, variables } = options;
-
-  // Get the element schema
   const elementSchema = schema._def.type;
-
-  // Only proceed if the element is an object
   if (!(elementSchema instanceof z.ZodObject)) {
-    throw new Error('Array element must be a ZodObject');
+    throw new Error(ARRAY_ELEMENT_NOT_OBJECT_ERROR);
   }
-
   const operation = operationName ? ` ${operationName}` : '';
   const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
   const fieldArgs = formatFieldArguments(variables);
+  const fieldName = getOperationFieldName(schema, operationName);
+  return `${queryType}${operation}${varsString} {\n  ${fieldName}${fieldArgs} {\n${processFields(elementSchema, queryType, options, 2)}  }\n}`;
+};
 
-  // Get the pluralized field name
-  const queryField = getOperationFieldName(schema, operationName);
-
-  // Generate the full GraphQL query for array
-  return `${GQLType.Query}${operation}${varsString} {\n  ${queryField}${fieldArgs} {\n${processFields(elementSchema, GQLType.Query, options, 2)}  }\n}`;
+// Process array operations
+export function processArrayQuery(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
+  return processArrayOperation(schema, GQLType.Query, options);
 }
 
 export function processArrayMutation(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
-  const { operationName, variables } = options;
-
-  // Get the element schema
-  const elementSchema = schema._def.type;
-
-  // Only proceed if the element is an object
-  if (!(elementSchema instanceof z.ZodObject)) {
-    throw new Error('Array element must be a ZodObject');
-  }
-
-  const operation = operationName ? ` ${operationName}` : '';
-  const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
-  const fieldArgs = formatFieldArguments(variables);
-
-  // Get the pluralized field name
-  const mutationField = getOperationFieldName(schema, operationName);
-
-  // Generate the full GraphQL mutation for array
-  return `${GQLType.Mutation}${operation}${varsString} {\n  ${mutationField}${fieldArgs} {\n${processFields(elementSchema, GQLType.Mutation, options, 2)}  }\n}`;
+  return processArrayOperation(schema, GQLType.Mutation, options);
 }
 
 export function processArraySubscription(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
-  const { operationName, variables } = options;
-
-  // Get the element schema
-  const elementSchema = schema._def.type;
-
-  // Only proceed if the element is an object
-  if (!(elementSchema instanceof z.ZodObject)) {
-    throw new Error('Array element must be a ZodObject');
-  }
-
-  const operation = operationName ? ` ${operationName}` : '';
-  const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
-  const fieldArgs = formatFieldArguments(variables);
-
-  // Get the pluralized field name
-  const subscriptionField = getOperationFieldName(schema, operationName);
-
-  // Generate the full GraphQL subscription for array
-  return `${GQLType.Subscription}${operation}${varsString} {\n  ${subscriptionField}${fieldArgs} {\n${processFields(elementSchema, GQLType.Subscription, options, 2)}  }\n}`;
+  return processArrayOperation(schema, GQLType.Subscription, options);
 }
 
 // Router function that delegates to the appropriate operation type for ZodObject

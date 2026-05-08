@@ -4,7 +4,7 @@ import { GQLType } from '../src/index';
 import { createSubscription } from '../src/subscription';
 import * as SubscriptionStories from '../src/subscription.stories';
 
-<Meta title="Documentation/Subscriptions" of={SubscriptionStories} />
+<Meta title='Documentation/Subscriptions' of={SubscriptionStories} />
 
 # GraphQL Subscriptions
 
@@ -23,31 +23,31 @@ import { z } from 'zod';
 import { createSubscription } from 'zod2gql';
 
 const notificationSchema = z.object({
-  id: z.string(),
-  type: z.string(),
-  message: z.string(),
-  timestamp: z.string(),
-  read: z.boolean(),
+id: z.string(),
+type: z.string(),
+message: z.string(),
+timestamp: z.string(),
+read: z.boolean(),
 }).describe('Notification'); // Set schema name for field inference
 
 const subscription = createSubscription(notificationSchema, {
-  operationName: 'SubscribeUserNotifications',
-  variables: { userId: 'user123' }
+operationName: 'SubscribeUserNotifications',
+variables: { userId: 'user123' }
 });
 
 console.log(subscription);
-/* Output:
+/_ Output:
 subscription SubscribeUserNotifications($userId: String!) {
-  notification(userId: $userId) {
-    id
-    type
-    message
-    timestamp
-    read
-  }
+notification(userId: $userId) {
+id
+type
+message
+timestamp
+read
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 ## Array Subscriptions with Automatic Pluralization
@@ -63,29 +63,29 @@ import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 
 const userPresenceSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  status: z.enum(['online', 'away', 'offline']),
-  lastSeen: z.string(),
+id: z.string(),
+name: z.string(),
+status: z.enum(['online', 'away', 'offline']),
+lastSeen: z.string(),
 }).describe('UserPresence'); // Set schema name using describe()
 
 // Subscribe to multiple users' presence
 const subscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {
-  variables: { roomId: 'room123' }
+variables: { roomId: 'room123' }
 });
 
 console.log(subscription);
-/* Output:
+/_ Output:
 subscription($roomId: String!) {
-  userPresences(roomId: $roomId) {
-    id
-    name
-    status
-    lastSeen
-  }
+userPresences(roomId: $roomId) {
+id
+name
+status
+lastSeen
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 The field name `userPresence` is automatically pluralized to `userPresences` when using an array schema.
@@ -104,17 +104,17 @@ const subscription = z.array(userPresenceSchema).toGQL(GQLType.Subscription, {
 });
 
 console.log(subscription);
-/* Output:
+/_ Output:
 subscription SubscribeRoomUsers($roomId: String!) {
-  userPresences(roomId: $roomId) {
-    id
-    name
-    status
-    lastSeen
-  }
+userPresences(roomId: $roomId) {
+id
+name
+status
+lastSeen
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 ## Real-time Data Subscriptions
@@ -135,23 +135,23 @@ const userPresenceSchema = z.object({
 }).describe('UserPresence');
 
 const subscription = createSubscription(userPresenceSchema, {
-  operationName: 'SubscribeUserPresence',
-  variables: { roomId: 'room123' }
+operationName: 'SubscribeUserPresence',
+variables: { roomId: 'room123' }
 });
 
 console.log(subscription);
-/* Output:
+/_ Output:
 subscription SubscribeUserPresence($roomId: String!) {
-  userPresence(roomId: $roomId) {
-    id
-    name
-    status
-    lastSeen
-    typing
-  }
+userPresence(roomId: $roomId) {
+id
+name
+status
+lastSeen
+typing
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 ## Complex Data Structures in Subscriptions
@@ -170,39 +170,39 @@ const messageAuthorSchema = z.object({
 }).describe('MessageAuthor');
 
 const chatMessageSchema = z.object({
-  id: z.string(),
-  content: z.string(),
-  author: messageAuthorSchema,
-  timestamp: z.string(),
-  roomId: z.string(),
-  edited: z.boolean().default(false),
-  reactions: z.record(z.string(), z.number()).optional(),
+id: z.string(),
+content: z.string(),
+author: messageAuthorSchema,
+timestamp: z.string(),
+roomId: z.string(),
+edited: z.boolean().default(false),
+reactions: z.record(z.string(), z.number()).optional(),
 }).describe('ChatMessage');
 
 const subscription = createSubscription(chatMessageSchema, {
-  operationName: 'SubscribeChatRoom',
-  variables: { roomId: 'room123' }
+operationName: 'SubscribeChatRoom',
+variables: { roomId: 'room123' }
 });
 
 console.log(subscription);
-/* Output:
+/_ Output:
 subscription SubscribeChatRoom($roomId: String!) {
-  chatMessage(roomId: $roomId) {
-    id
-    content
-    author {
-      id
-      name
-      avatarUrl
-    }
-    timestamp
-    roomId
-    edited
-    reactions
-  }
+chatMessage(roomId: $roomId) {
+id
+content
+author {
+id
+name
+avatarUrl
 }
-*/
-  `}
+timestamp
+roomId
+edited
+reactions
+}
+}
+_/
+`}
 />
 
 ## Event-Based Subscriptions
@@ -231,31 +231,31 @@ const commentEventSchema = z.object({
 }).describe('CommentEvent');
 
 const subscription = createSubscription(commentEventSchema, {
-  operationName: 'SubscribeCommentEvents',
-  variables: { postId: 'post123' }
+operationName: 'SubscribeCommentEvents',
+variables: { postId: 'post123' }
 });
 
 console.log(subscription);
-/* Output:
+/_ Output:
 subscription SubscribeCommentEvents($postId: String!) {
-  commentEvent(postId: $postId) {
-    id
-    postId
-    eventType
-    timestamp
-    comment {
-      id
-      content
-      author {
-        id
-        name
-      }
-      createdAt
-    }
-  }
+commentEvent(postId: $postId) {
+id
+postId
+eventType
+timestamp
+comment {
+id
+content
+author {
+id
+name
 }
-*/
-  `}
+createdAt
+}
+}
+}
+_/
+`}
 />
 
 ## Multiple Subscriptions
@@ -274,48 +274,48 @@ const combinedSchema = z.object({
 }).describe('MultiSubscription');
 
 const subscription = createSubscription(combinedSchema, {
-  operationName: 'MultiSubscription',
-  variables: { 
-    userId: 'user123',
-    roomId: 'room456'
-  }
+operationName: 'MultiSubscription',
+variables: {
+userId: 'user123',
+roomId: 'room456'
+}
 });
 
 console.log(subscription);
-/* Output:
+/_ Output:
 subscription MultiSubscription($userId: String!, $roomId: String!) {
-  multiSubscription(userId: $userId, roomId: $roomId) {
-    userPresence {
-      id
-      name
-      status
-      lastSeen
-      typing
-    }
-    notifications {
-      id
-      type
-      message
-      timestamp
-      read
-    }
-    chatMessages {
-      id
-      content
-      author {
-        id
-        name
-        avatarUrl
-      }
-      timestamp
-      roomId
-      edited
-      reactions
-    }
-  }
+multiSubscription(userId: $userId, roomId: $roomId) {
+userPresence {
+id
+name
+status
+lastSeen
+typing
 }
-*/
-  `}
+notifications {
+id
+type
+message
+timestamp
+read
+}
+chatMessages {
+id
+content
+author {
+id
+name
+avatarUrl
+}
+timestamp
+roomId
+edited
+reactions
+}
+}
+}
+_/
+`}
 />
 
 ## Controlling Subscription Depth
@@ -334,32 +334,32 @@ const subscription = createSubscription(chatMessageSchema, {
 });
 
 console.log(subscription);
-/* Output:
+/_ Output:
 subscription SubscribeChatRoom($roomId: String!) {
-  chatMessage(roomId: $roomId) {
-    id
-    content
-    author
-    timestamp
-    roomId
-    edited
-    reactions
-  }
+chatMessage(roomId: $roomId) {
+id
+content
+author
+timestamp
+roomId
+edited
+reactions
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 ## Live Examples
 
 <Canvas>
-  <Story id="graphql-subscription--user-notifications" />
+  <Story id='graphql-subscription--user-notifications' />
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-subscription--users-presence-subscription" />
+  <Story id='graphql-subscription--users-presence-subscription' />
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-subscription--subscribe-users-presence" />
+  <Story id='graphql-subscription--subscribe-users-presence' />
 </Canvas>

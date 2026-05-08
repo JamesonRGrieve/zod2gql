@@ -6,17 +6,18 @@ Package manager: **npm**. Toolchain: TypeScript + Babel + ESLint + Prettier. (St
 
 ---
 
-## Current State
+## State
 
-This repo is **not yet at workspace-grade**. Tracked debt:
+At workspace grade as of the last ratchet pass:
 
-- `tsconfig.json` has `"strict": false` and `"strictNullChecks": false` flagged with `// TODO Make this work.` Same pathway as `auth/`: introduce `.tsc-error-baseline`, ratchet to zero, flip strict on.
-- `target: "es5"` is stale; bump to `ESNext` once strict lands.
-- Trailing comma after `plugins` array in `tsconfig.json` is a JSON syntax error suppressed only by JSON5-tolerant readers — fix it.
-- No `vitest.config.ts` or `tests/` directory. The translator pipeline (Zod → GraphQL AST → GraphQL SDL) is **pure logic and 100% Vitest-coverable**; this is the highest-leverage thing this repo is missing. Aim for full unit coverage of every Zod type → GraphQL type mapping branch.
-- No ratchet scripts. Adopt `dynamic-form/scripts/` runners.
+- `strict: true`, `strictNullChecks: true`, `allowJs: false`, `target: ES2020` — strict-clean.
+- Lint, typecheck, symmetry, and js-coverage ratchets all green at zero.
+- Vitest in place; `src/index.test.ts` exhaustively covers `pluralize`, `getOperationFieldName`, variable / argument formatting, `processFields` (scalar, nested object, optional/nullable, array-of-object, array-of-scalar, maxDepth), the `schema.toGQL` router for query / mutation / subscription, and the `processArray*` family.
 
-Track in `todo.json` (create if absent).
+Outstanding nice-to-haves (not blocking):
+
+- Add table-driven tests for less-common Zod combinators: `z.union`, `z.discriminatedUnion`, `z.record`, `z.tuple`, `z.lazy` (recursive), `z.intersection`, `z.literal`. Some of these the translator currently doesn't handle gracefully — those are real bugs that need fixing along with the tests.
+- Consider tightening the `(schema._def as { typeName?: string })` cast in `fieldNameFromObject` once Zod ships a public way to access typeName.
 
 ---
 
@@ -41,7 +42,14 @@ npm install
 npm run lint / npm run lint:fix
 npm run format / npm run format:fix
 npm run typecheck                     # tsc --noEmit
+npm run test / npm run test:watch
 npm run compile                       # tsc → dist/
-```
 
-Add Vitest + the ratchet/symmetry commands as part of bringing this repo up to workspace grade.
+# Ratchets
+npm run lint:ratchet[:update]
+npm run typecheck:ratchet[:update]
+npm run symmetry:ratchet[:update]
+npm run js-coverage:ratchet[:update]
+
+npm run check                         # all four ratchets + format
+```

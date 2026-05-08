@@ -4,7 +4,7 @@ import { GQLType } from '../src/index';
 import { createQuery } from '../src/query';
 import * as QueryStories from '../src/query.stories';
 
-<Meta title="Documentation/Queries" of={QueryStories} />
+<Meta title='Documentation/Queries' of={QueryStories} />
 
 # GraphQL Queries
 
@@ -23,27 +23,27 @@ import { z } from 'zod';
 import { createQuery } from 'zod2gql';
 
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
+id: z.string(),
+name: z.string(),
+email: z.string(),
 }).describe('User'); // Set schema name for field inference
 
 const query = createQuery(userSchema, {
-  operationName: 'GetUser',
-  variables: { id: '123' }
+operationName: 'GetUser',
+variables: { id: '123' }
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query GetUser($id: String!) {
-  user(id: $id) {
-    id
-    name
-    email
-  }
+user(id: $id) {
+id
+name
+email
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 ## Query with Nested Objects
@@ -62,31 +62,31 @@ const addressSchema = z.object({
 }).describe('Address');
 
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  address: addressSchema,
+id: z.string(),
+name: z.string(),
+address: addressSchema,
 }).describe('User');
 
 const query = createQuery(userSchema, {
-  operationName: 'GetUser',
-  variables: { id: '123' }
+operationName: 'GetUser',
+variables: { id: '123' }
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query GetUser($id: String!) {
-  user(id: $id) {
-    id
-    name
-    address {
-      street
-      city
-      zipCode
-    }
-  }
+user(id: $id) {
+id
+name
+address {
+street
+city
+zipCode
 }
-*/
-  `}
+}
+}
+_/
+`}
 />
 
 ## Array Queries with Automatic Pluralization
@@ -102,30 +102,30 @@ import { z } from 'zod';
 import { GQLType } from 'zod2gql';
 
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
+id: z.string(),
+name: z.string(),
+email: z.string(),
 }).describe('User'); // Using describe() to set the schema name
 
 // Using array schema for automatic pluralization
 const query = z.array(userSchema).toGQL(GQLType.Query, {
-  variables: { limit: 10, offset: 0 }
+variables: { limit: 10, offset: 0 }
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query($limit: Int!, $offset: Int!) {
-  users(limit: $limit, offset: $offset) {
-    id
-    name
-    email
-  }
+users(limit: $limit, offset: $offset) {
+id
+name
+email
 }
-*/
-  `}
+}
+_/
+`}
 />
 
-Notice how the field name `user` was automatically pluralized to `users` when using an array schema. 
+Notice how the field name `user` was automatically pluralized to `users` when using an array schema.
 This makes it more intuitive to create queries for lists of resources.
 
 You can still provide an explicit operation name if needed:
@@ -141,16 +141,16 @@ const query = z.array(userSchema).toGQL(GQLType.Query, {
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query GetUsers($limit: Int!, $offset: Int!) {
-  users(limit: $limit, offset: $offset) {
-    id
-    name
-    email
-  }
+users(limit: $limit, offset: $offset) {
+id
+name
+email
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 ## Query with Arrays
@@ -175,27 +175,27 @@ const postSchema = z.object({
 }).describe('Post');
 
 const query = createQuery(postSchema, {
-  operationName: 'GetPost',
-  variables: { id: 'post123' }
+operationName: 'GetPost',
+variables: { id: 'post123' }
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query GetPost($id: String!) {
-  post(id: $id) {
-    id
-    title
-    content
-    tags
-    comments {
-      id
-      text
-      author
-    }
-  }
+post(id: $id) {
+id
+title
+content
+tags
+comments {
+id
+text
+author
 }
-*/
-  `}
+}
+}
+_/
+`}
 />
 
 ## Query with Optional Fields
@@ -216,23 +216,23 @@ const userSchema = z.object({
 }).describe('User');
 
 const query = createQuery(userSchema, {
-  operationName: 'GetUser',
-  variables: { id: '123' }
+operationName: 'GetUser',
+variables: { id: '123' }
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query GetUser($id: String!) {
-  user(id: $id) {
-    id
-    name
-    email
-    profilePicture
-    bio
-  }
+user(id: $id) {
+id
+name
+email
+profilePicture
+bio
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 ## Query with Circular References
@@ -253,42 +253,42 @@ const categorySchema = z.object({
 
 // Add circular reference using z.lazy()
 const productSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  category: categorySchema,
-  relatedProducts: z.array(z.lazy(() => productSchema)),
+id: z.string(),
+name: z.string(),
+category: categorySchema,
+relatedProducts: z.array(z.lazy(() => productSchema)),
 }).describe('Product');
 
 const query = createQuery(productSchema, {
-  operationName: 'GetProduct',
-  variables: { id: 'product123' }
+operationName: 'GetProduct',
+variables: { id: 'product123' }
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query GetProduct($id: String!) {
-  product(id: $id) {
-    id
-    name
-    category {
-      id
-      name
-      description
-    }
-    relatedProducts {
-      id
-      name
-      category {
-        id
-        name
-        description
-      }
-      relatedProducts
-    }
-  }
+product(id: $id) {
+id
+name
+category {
+id
+name
+description
 }
-*/
-  `}
+relatedProducts {
+id
+name
+category {
+id
+name
+description
+}
+relatedProducts
+}
+}
+}
+_/
+`}
 />
 
 ## Controlling Recursion Depth
@@ -307,38 +307,38 @@ const query = createQuery(productSchema, {
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query GetProduct($id: String!) {
-  product(id: $id) {
-    id
-    name
-    category {
-      id
-      name
-      description
-    }
-    relatedProducts {
-      id
-      name
-      category
-      relatedProducts
-    }
-  }
+product(id: $id) {
+id
+name
+category {
+id
+name
+description
 }
-*/
-  `}
+relatedProducts {
+id
+name
+category
+relatedProducts
+}
+}
+}
+_/
+`}
 />
 
 ## Live Examples
 
 <Canvas>
-  <Story id="graphql-query--simple-query" />
+  <Story id='graphql-query--simple-query' />
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-query--users-array-query" />
+  <Story id='graphql-query--users-array-query' />
 </Canvas>
 
 <Canvas>
-  <Story id="graphql-query--get-users-explicit-name-query" />
+  <Story id='graphql-query--get-users-explicit-name-query' />
 </Canvas>

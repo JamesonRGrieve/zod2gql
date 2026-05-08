@@ -23,85 +23,84 @@ const updateMode = args.includes('--update');
 let lintOutput;
 const lintOutputPath = resolve(tmpdir(), `zod2gql-eslint-${process.pid}.json`);
 try {
-    execSync(
-        `./node_modules/.bin/eslint ${ESLINT_TARGET} --ext ${ESLINT_EXTS} --format json > "${lintOutputPath}"`,
-        {
-            encoding: 'utf8',
-            stdio: ['ignore', 'pipe', 'pipe'],
-            maxBuffer: 64 * 1024 * 1024,
-            shell: '/bin/bash',
-        },
-    );
+  execSync(`./node_modules/.bin/eslint ${ESLINT_TARGET} --ext ${ESLINT_EXTS} --format json > "${lintOutputPath}"`, {
+    encoding: 'utf8',
+    stdio: ['ignore', 'pipe', 'pipe'],
+    maxBuffer: 64 * 1024 * 1024,
+    shell: '/bin/bash',
+  });
 } catch (err) {
-    if (existsSync(lintOutputPath)) {
-        lintOutput = readFileSync(lintOutputPath, 'utf8');
-    } else {
-        lintOutput = err.stdout?.toString() || '';
-    }
+  if (existsSync(lintOutputPath)) {
+    lintOutput = readFileSync(lintOutputPath, 'utf8');
+  } else {
+    lintOutput = err.stdout?.toString() || '';
+  }
 }
 
 if (!lintOutput && existsSync(lintOutputPath)) {
-    lintOutput = readFileSync(lintOutputPath, 'utf8');
+  lintOutput = readFileSync(lintOutputPath, 'utf8');
 }
 if (existsSync(lintOutputPath)) {
-    unlinkSync(lintOutputPath);
+  unlinkSync(lintOutputPath);
 }
 
 let results;
 try {
-    results = JSON.parse(lintOutput);
+  results = JSON.parse(lintOutput);
 } catch (err) {
-    console.error('[lint-ratchet] failed to parse eslint JSON output');
-    console.error(err.message);
-    console.error('---raw output---');
-    console.error(lintOutput?.slice(0, 2000));
-    process.exit(2);
+  console.error('[lint-ratchet] failed to parse eslint JSON output');
+  console.error(err.message);
+  console.error('---raw output---');
+  console.error(lintOutput?.slice(0, 2000));
+  process.exit(2);
 }
 
 const errorCount = results.reduce((sum, r) => sum + r.errorCount, 0);
 const warningCount = results.reduce((sum, r) => sum + r.warningCount, 0);
 
 if (errorCount > 0) {
-    console.error(`[lint-ratchet] FAIL: eslint reported ${errorCount} error(s). Errors are not allowed.`);
-    const offenders = results
-        .filter((r) => r.errorCount > 0)
-        .slice(0, 10)
-        .map((r) => `  ${r.filePath}: ${r.errorCount} error(s)`)
-        .join('\n');
-    if (offenders) {
-        console.error(offenders);
-    }
-    process.exit(1);
+  console.error(`[lint-ratchet] FAIL: eslint reported ${errorCount} error(s). Errors are not allowed.`);
+  const offenders = results
+    .filter((r) => r.errorCount > 0)
+    .slice(0, 10)
+    .map((r) => `  ${r.filePath}: ${r.errorCount} error(s)`)
+    .join('\n');
+  if (offenders) {
+    console.error(offenders);
+  }
+  process.exit(1);
 }
 
 if (updateMode) {
-    writeFileSync(BASELINE_PATH, `${warningCount}\n`, 'utf8');
-    console.log(`[lint-ratchet] baseline updated to ${warningCount}`);
-    process.exit(0);
+  writeFileSync(BASELINE_PATH, `${warningCount}\n`, 'utf8');
+  console.log(`[lint-ratchet] baseline updated to ${warningCount}`);
+  process.exit(0);
 }
 
 if (!existsSync(BASELINE_PATH)) {
-    writeFileSync(BASELINE_PATH, `${warningCount}\n`, 'utf8');
-    console.log(`[lint-ratchet] baseline file missing — initialised at ${warningCount}`);
-    process.exit(0);
+  writeFileSync(BASELINE_PATH, `${warningCount}\n`, 'utf8');
+  console.log(`[lint-ratchet] baseline file missing — initialised at ${warningCount}`);
+  process.exit(0);
 }
 
 const baseline = parseInt(readFileSync(BASELINE_PATH, 'utf8').trim(), 10);
 if (Number.isNaN(baseline)) {
-    console.error(`[lint-ratchet] cannot parse baseline at ${BASELINE_PATH}`);
-    process.exit(2);
+  console.error(`[lint-ratchet] cannot parse baseline at ${BASELINE_PATH}`);
+  process.exit(2);
 }
 
 if (warningCount > baseline) {
-    console.error(`[lint-ratchet] FAIL: eslint warnings increased ${baseline} -> ${warningCount} (+${warningCount - baseline}).`);
-    console.error('Either fix the new warnings or, if intentional, run: pnpm lint:ratchet:update');
-    process.exit(1);
+  console.error(
+    `[lint-ratchet] FAIL: eslint warnings increased ${baseline} -> ${warningCount} (+${warningCount - baseline}).`,
+  );
+  console.error('Either fix the new warnings or, if intentional, run: pnpm lint:ratchet:update');
+  process.exit(1);
 }
 
 if (warningCount < baseline) {
-    console.log(`[lint-ratchet] OK: eslint warnings decreased ${baseline} -> ${warningCount} (-${baseline - warningCount}).`);
-    console.log('Lower the baseline in the same commit: pnpm lint:ratchet:update');
-    process.exit(0);
+  console.log(`[lint-ratchet] OK: eslint warnings decreased ${baseline} -> ${warningCount} (-${baseline - warningCount}).`);
+  console.log('Lower the baseline in the same commit: pnpm lint:ratchet:update');
+  process.exit(0);
 }
 
 console.log(`[lint-ratchet] OK: eslint warnings unchanged at ${warningCount}.`);

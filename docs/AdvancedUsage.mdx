@@ -5,7 +5,7 @@ import { processMutation } from '../src/mutation';
 import { processQuery } from '../src/query';
 import { processSubscription } from '../src/subscription';
 
-<Meta title="Documentation/Advanced Usage" />
+<Meta title='Documentation/Advanced Usage' />
 
 # Advanced Usage
 
@@ -25,27 +25,27 @@ import { createQuery } from 'zod2gql';
 
 // Create a schema with a name using describe()
 const productSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  price: z.number(),
+id: z.string(),
+name: z.string(),
+price: z.number(),
 }).describe('Product'); // This is the preferred way to set the schema name
 
 // No need to specify operationName - it will be inferred from the schema description
 const query = createQuery(productSchema, {
-  variables: { id: 'prod123' }
+variables: { id: 'prod123' }
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query($id: String!) {
-  product(id: $id) {
-    id
-    name
-    price
-  }
+product(id: $id) {
+id
+name
+price
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 ## Working with Array Schemas and Pluralization
@@ -62,58 +62,59 @@ import { GQLType } from 'zod2gql';
 
 // Create a schema with a name using describe()
 const productSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  price: z.number(),
+id: z.string(),
+name: z.string(),
+price: z.number(),
 }).describe('Product'); // Set schema name with describe()
 
 // Create an array schema for querying multiple products
 const productsQuery = z.array(productSchema).toGQL(GQLType.Query, {
-  variables: { 
-    category: 'electronics',
-    limit: 20,
-    sortBy: 'price'
-  }
+variables: {
+category: 'electronics',
+limit: 20,
+sortBy: 'price'
+}
 });
 
 console.log(productsQuery);
-/* Output:
+/_ Output:
 query($category: String!, $limit: Int!, $sortBy: String!) {
-  products(category: $category, limit: $limit, sortBy: $sortBy) {
-    id
-    name
-    price
-  }
+products(category: $category, limit: $limit, sortBy: $sortBy) {
+id
+name
+price
 }
-*/
+}
+_/
 
 // For bulk operations
 const bulkCreateMutation = z.array(productSchema).toGQL(GQLType.Mutation, {
-  variables: {
-    products: [
-      { name: 'Laptop', price: 999.99 },
-      { name: 'Phone', price: 599.99 }
-    ]
-  },
-  inputTypeMap: {
-    products: '[ProductInput!]'
-  }
+variables: {
+products: [
+{ name: 'Laptop', price: 999.99 },
+{ name: 'Phone', price: 599.99 }
+]
+},
+inputTypeMap: {
+products: '[ProductInput!]'
+}
 });
 
 console.log(bulkCreateMutation);
-/* Output:
+/_ Output:
 mutation($products: [ProductInput!]!) {
-  createProducts(products: $products) {
-    id
-    name
-    price
-  }
+createProducts(products: $products) {
+id
+name
+price
 }
-*/
-  `}
+}
+_/
+`}
 />
 
 The pluralization works with most English nouns, applying common rules like:
+
 - For words ending in 'y', change to 'ies' (e.g., "category" → "categories")
 - For words ending in 's', 'x', 'ch', 'sh', add 'es' (e.g., "box" → "boxes")
 - For regular nouns, add 's' (e.g., "product" → "products")
@@ -135,20 +136,20 @@ const categorySchema = z.object({
 
 // Self-referential through lazy() for parent/child relationships
 categorySchema.extend({
-  parentCategory: z.lazy(() => categorySchema).optional(),
-  subCategories: z.array(z.lazy(() => categorySchema)).optional(),
+parentCategory: z.lazy(() => categorySchema).optional(),
+subCategories: z.array(z.lazy(() => categorySchema)).optional(),
 });
 
 // Limit the depth to prevent overly complex queries
 const query = createQuery(categorySchema, {
-  operationName: 'GetCategory',
-  variables: { id: 'cat123' },
-  maxDepth: 3 // Control recursion depth
+operationName: 'GetCategory',
+variables: { id: 'cat123' },
+maxDepth: 3 // Control recursion depth
 });
 
 console.log(query);
-/* Output limited to depth 3 */
-  `}
+/_ Output limited to depth 3 _/
+`}
 />
 
 ## Complex Input Type Mapping
@@ -164,37 +165,37 @@ import { z } from 'zod';
 import { createMutation } from 'zod2gql';
 
 const orderResponseSchema = z.object({
-  id: z.string(),
-  status: z.string(),
-  items: z.array(z.object({
-    productId: z.string(),
-    quantity: z.number(),
-    price: z.number()
-  })),
-  total: z.number()
+id: z.string(),
+status: z.string(),
+items: z.array(z.object({
+productId: z.string(),
+quantity: z.number(),
+price: z.number()
+})),
+total: z.number()
 }).describe('Order'); // Set schema name with describe()
 
 const mutation = createMutation(orderResponseSchema, {
-  operationName: 'CreateOrder',
-  variables: {
-    orderInput: {
-      items: [
-        { productId: 'p1', quantity: 2 },
-        { productId: 'p2', quantity: 1 }
-      ],
-      shipping: { address: '123 Main St', method: 'express' },
-      payment: { type: 'credit', cardToken: 'token123' }
-    }
-  },
-  // Custom type mapping for complex inputs
-  inputTypeMap: {
-    orderInput: 'OrderInput',
-    'orderInput.items': 'OrderItemInput',
-    'orderInput.shipping': 'ShippingInput',
-    'orderInput.payment': 'PaymentMethodInput'
-  }
+operationName: 'CreateOrder',
+variables: {
+orderInput: {
+items: [
+{ productId: 'p1', quantity: 2 },
+{ productId: 'p2', quantity: 1 }
+],
+shipping: { address: '123 Main St', method: 'express' },
+payment: { type: 'credit', cardToken: 'token123' }
+}
+},
+// Custom type mapping for complex inputs
+inputTypeMap: {
+orderInput: 'OrderInput',
+'orderInput.items': 'OrderItemInput',
+'orderInput.shipping': 'ShippingInput',
+'orderInput.payment': 'PaymentMethodInput'
+}
 });
-  `}
+`}
 />
 
 ## Batch Operations with Array Schemas
@@ -211,43 +212,43 @@ import { GQLType } from 'zod2gql';
 
 // Define user schema with describe()
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
-  isActive: z.boolean(),
+id: z.string(),
+name: z.string(),
+email: z.string(),
+isActive: z.boolean(),
 }).describe('User');
 
 // Batch create users
 const batchCreateMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
-  operationName: 'CreateUsers',
-  variables: {
-    users: [
-      { name: 'John', email: 'john@example.com', isActive: true },
-      { name: 'Jane', email: 'jane@example.com', isActive: true }
-    ]
-  },
-  inputTypeMap: {
-    users: '[UserInput!]'
-  }
+operationName: 'CreateUsers',
+variables: {
+users: [
+{ name: 'John', email: 'john@example.com', isActive: true },
+{ name: 'Jane', email: 'jane@example.com', isActive: true }
+]
+},
+inputTypeMap: {
+users: '[UserInput!]'
+}
 });
 
 // Batch update users
 const batchUpdateMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
-  operationName: 'UpdateUsersStatus',
-  variables: {
-    ids: ['user1', 'user2', 'user3'],
-    isActive: false
-  }
+operationName: 'UpdateUsersStatus',
+variables: {
+ids: ['user1', 'user2', 'user3'],
+isActive: false
+}
 });
 
 // Batch delete users
 const batchDeleteMutation = z.array(userSchema).toGQL(GQLType.Mutation, {
-  operationName: 'DeleteUsers',
-  variables: {
-    ids: ['user1', 'user2', 'user3']
-  }
+operationName: 'DeleteUsers',
+variables: {
+ids: ['user1', 'user2', 'user3']
+}
 });
-  `}
+`}
 />
 
 ## Using with GraphQL Client Libraries
@@ -265,35 +266,35 @@ import { gql } from 'graphql-tag';
 
 // Define your schema with describe()
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string()
+id: z.string(),
+name: z.string(),
+email: z.string()
 }).describe('User');
 
 // Generate the query
 const USER_QUERY = createQuery(userSchema, {
-  operationName: 'GetUser',
-  variables: { id: '$id' } // Using a placeholder
+operationName: 'GetUser',
+variables: { id: '$id' } // Using a placeholder
 });
 
 // Use with Apollo Client
 function UserProfile({ userId }) {
-  // Parse the generated query
-  const { loading, error, data } = useQuery(gql\`\${USER_QUERY.replace('$id', 'id')}\`, {
-    variables: { id: userId }
-  });
+// Parse the generated query
+const { loading, error, data } = useQuery(gql\`\${USER_QUERY.replace('$id', 'id')}\`, {
+variables: { id: userId }
+});
 
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error :(</p>;
+if (loading) return <p>Loading...</p>;
+if (error) return <p>Error :(</p>;
 
-  return (
-    <div>
-      <h2>{data.user.name}</h2>
-      <p>{data.user.email}</p>
-    </div>
-  );
+return (
+<div>
+<h2>{data.user.name}</h2>
+<p>{data.user.email}</p>
+</div>
+);
 }
-  `}
+`}
 />
 
 ## Using Array Schemas with Apollo Client
@@ -312,65 +313,65 @@ import { gql } from 'graphql-tag';
 
 // Define user schema with describe()
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string(),
-  isActive: z.boolean(),
+id: z.string(),
+name: z.string(),
+email: z.string(),
+isActive: z.boolean(),
 }).describe('User');
 
 // Generate a users list query
 const USERS_QUERY = z.array(userSchema).toGQL(GQLType.Query, {
-  variables: { 
-    limit: '$limit', 
+variables: {
+limit: '$limit', 
     offset: '$offset',
-    filters: '$filters'
-  }
+filters: '$filters'
+}
 });
 
 // Generate a bulk delete mutation
 const DELETE_USERS_MUTATION = z.array(userSchema).toGQL(GQLType.Mutation, {
-  variables: { 
-    ids: '$ids'
-  }
+variables: {
+ids: '$ids'
+}
 });
 
 // React component for user list
 function UserList() {
-  const { loading, error, data } = useQuery(gql\`\${USERS_QUERY.replace(/\$limit|\$offset|\$filters/g, (m) => m.substring(1))}\`, {
-    variables: { 
-      limit: 10, 
-      offset: 0,
-      filters: { isActive: true }
-    }
-  });
-  
-  const [deleteUsers] = useMutation(gql\`\${DELETE_USERS_MUTATION.replace('$ids', 'ids')}\`);
-  
-  if (loading) return <p>Loading...</p>;
-  if (error) return <p>Error: {error.message}</p>;
-  
-  const handleBulkDelete = (selectedIds) => {
-    deleteUsers({ 
-      variables: { ids: selectedIds },
-      update: (cache) => {
-        // Update cache after deletion
-      }
-    });
-  };
-  
-  return (
-    <div>
-      <h1>Users</h1>
-      <table>
-        {/* Table content here */}
-      </table>
-      <button onClick={() => handleBulkDelete(['user1', 'user2'])}>
-        Delete Selected
-      </button>
-    </div>
-  );
+const { loading, error, data } = useQuery(gql\`\${USERS_QUERY.replace(/\$limit|\$offset|\$filters/g, (m) => m.substring(1))}\`, {
+variables: {
+limit: 10,
+offset: 0,
+filters: { isActive: true }
 }
-  `}
+});
+
+const [deleteUsers] = useMutation(gql\`\${DELETE_USERS_MUTATION.replace('$ids', 'ids')}\`);
+
+if (loading) return <p>Loading...</p>;
+if (error) return <p>Error: {error.message}</p>;
+
+const handleBulkDelete = (selectedIds) => {
+deleteUsers({
+variables: { ids: selectedIds },
+update: (cache) => {
+// Update cache after deletion
+}
+});
+};
+
+return (
+<div>
+<h1>Users</h1>
+<table>
+{/* Table content here */}
+</table>
+<button onClick={() => handleBulkDelete(['user1', 'user2'])}>
+Delete Selected
+</button>
+</div>
+);
+}
+`}
 />
 
 ## Custom Field Resolution
@@ -389,26 +390,26 @@ import { GQLType } from 'zod2gql';
 const originalToGQL = z.ZodObject.prototype.toGQL;
 
 z.ZodObject.prototype.toGQL = function(
-  queryType = GQLType.Query,
-  options = {},
-  depth = 0
+queryType = GQLType.Query,
+options = {},
+depth = 0
 ) {
-  // Special handling for schemas with a specific description
-  if (this.description === 'CustomType' && depth === 0) {
-    // Custom field generation logic
-    const fields = customFieldGenerator(this);
-    return \`\${queryType} \${options.operationName || ''}(...) {\n  \${fields}\n}\`;
-  }
-  
-  // Fall back to the original implementation
-  return originalToGQL.call(this, queryType, options, depth);
+// Special handling for schemas with a specific description
+if (this.description === 'CustomType' && depth === 0) {
+// Custom field generation logic
+const fields = customFieldGenerator(this);
+return \`\${queryType} \${options.operationName || ''}(...) {\n \${fields}\n}\`;
+}
+
+// Fall back to the original implementation
+return originalToGQL.call(this, queryType, options, depth);
 };
 
 function customFieldGenerator(schema) {
-  // Your custom field generation logic here
-  // ...
+// Your custom field generation logic here
+// ...
 }
-  `}
+`}
 />
 
 ## Composing Multiple Schemas
@@ -425,51 +426,51 @@ import { createQuery } from 'zod2gql';
 
 // Define schemas with describe()
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string()
+id: z.string(),
+name: z.string(),
+email: z.string()
 }).describe('User');
 
 const postSchema = z.object({
-  id: z.string(),
-  title: z.string(),
-  content: z.string()
+id: z.string(),
+title: z.string(),
+content: z.string()
 }).describe('Post');
 
 const profileSchema = z.object({
-  user: userSchema,
-  recentPosts: z.array(postSchema),
-  stats: z.object({
-    postCount: z.number(),
-    followersCount: z.number()
-  })
+user: userSchema,
+recentPosts: z.array(postSchema),
+stats: z.object({
+postCount: z.number(),
+followersCount: z.number()
+})
 }).describe('Profile');
 
 const query = createQuery(profileSchema, {
-  operationName: 'GetUserProfile',
-  variables: { userId: 'user123' }
+operationName: 'GetUserProfile',
+variables: { userId: 'user123' }
 });
 
 console.log(query);
-/* Output:
+/_ Output:
 query GetUserProfile($userId: String!) {
-  profile(userId: $userId) {
-    user {
-      id
-      name
-      email
-    }
-    recentPosts {
-      id
-      title
-      content
-    }
-    stats {
-      postCount
-      followersCount
-    }
-  }
+profile(userId: $userId) {
+user {
+id
+name
+email
 }
-*/
-  `}
+recentPosts {
+id
+title
+content
+}
+stats {
+postCount
+followersCount
+}
+}
+}
+_/
+`}
 />

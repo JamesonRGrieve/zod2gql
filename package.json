@@ -25,6 +25,8 @@
     "js-coverage:ratchet": "node scripts/js-coverage-ratchet.mjs",
     "js-coverage:ratchet:update": "node scripts/js-coverage-ratchet.mjs --update",
     "compile": "rm -rf ./dist && tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "storybook": "storybook dev -p 3001",
     "storybook-build": "storybook build",
     "storybook-run": "npx http-server storybook-static -p 3001",
@@ -99,6 +101,7 @@
     "eslint-plugin-unused-imports": "^4.1.4",
     "prettier": "^3.5.3",
     "storybook": "^8.6.10",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^4.1.5"
   }
 }

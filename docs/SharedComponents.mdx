@@ -1,7 +1,6 @@
 import { ArgsTable, Canvas, Meta, Story } from '@storybook/addon-docs';
 
-
-<Meta title="Documentation/Shared Components" />
+<Meta title='Documentation/Shared Components' />
 
 # Shared Documentation Components
 
@@ -23,16 +22,17 @@ import { z } from 'zod';
 import { createQuery } from 'zod2gql';
 
 const userSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  email: z.string()
+id: z.string(),
+name: z.string(),
+email: z.string()
 });
 
 const query = createQuery(userSchema, {
-  operationName: 'GetUser',
-  variables: { id: '123' }
+operationName: 'GetUser',
+variables: { id: '123' }
 });
 `}
+
 </CodeBlock>
 
 ## TypeTable
@@ -40,7 +40,7 @@ const query = createQuery(userSchema, {
 The `TypeTable` component can be used to document types and interfaces.
 
 export const TypeTable = ({ type, properties }) => (
-  <table className="docblock-argstable">
+  <table className='docblock-argstable'>
     <thead>
       <tr>
         <th>Property</th>
@@ -53,7 +53,9 @@ export const TypeTable = ({ type, properties }) => (
       {properties.map((prop) => (
         <tr key={prop.name}>
           <td>{prop.name}</td>
-          <td><code>{prop.type}</code></td>
+          <td>
+            <code>{prop.type}</code>
+          </td>
           <td>{prop.required ? 'Yes' : 'No'}</td>
           <td>{prop.description}</td>
         </tr>
@@ -64,33 +66,33 @@ export const TypeTable = ({ type, properties }) => (
 
 <h3>ToGQLOptions Interface</h3>
 
-<TypeTable 
-  type="ToGQLOptions"
+<TypeTable
+  type='ToGQLOptions'
   properties={[
     {
-      name: "operationName",
-      type: "string",
+      name: 'operationName',
+      type: 'string',
       required: false,
-      description: "Name of the GraphQL operation"
+      description: 'Name of the GraphQL operation',
     },
     {
-      name: "variables",
-      type: "Record<string, any>",
+      name: 'variables',
+      type: 'Record<string, any>',
       required: false,
-      description: "Variables to include in the GraphQL operation"
+      description: 'Variables to include in the GraphQL operation',
     },
     {
-      name: "maxDepth",
-      type: "number",
+      name: 'maxDepth',
+      type: 'number',
       required: false,
-      description: "Maximum depth for nested fields (default: 10)"
+      description: 'Maximum depth for nested fields (default: 10)',
     },
     {
-      name: "inputTypeMap",
-      type: "Record<string, string>",
+      name: 'inputTypeMap',
+      type: 'Record<string, string>',
       required: false,
-      description: "Map of variable names to GraphQL input types"
-    }
+      description: 'Map of variable names to GraphQL input types',
+    },
   ]}
 />
 
@@ -99,16 +101,16 @@ export const TypeTable = ({ type, properties }) => (
 The `MethodSignature` component can be used to document functions and methods.
 
 export const MethodSignature = ({ name, signature, description, examples = [] }) => (
-  <div className="method-signature">
+  <div className='method-signature'>
     <h3>{name}</h3>
-    <CodeBlock language="typescript">{signature}</CodeBlock>
+    <CodeBlock language='typescript'>{signature}</CodeBlock>
     <p>{description}</p>
     {examples.length > 0 && (
       <>
         <h4>Examples</h4>
         {examples.map((example, index) => (
           <div key={index}>
-            <CodeBlock language="typescript">{example.code}</CodeBlock>
+            <CodeBlock language='typescript'>{example.code}</CodeBlock>
             {example.description && <p>{example.description}</p>}
           </div>
         ))}
@@ -118,20 +120,20 @@ export const MethodSignature = ({ name, signature, description, examples = [] })
 );
 
 <MethodSignature
-  name="createQuery"
+  name='createQuery'
   signature={`function createQuery(
   schema: z.ZodObject<any>,
   options?: ToGQLOptions
 ): string;`}
-  description="Creates a GraphQL query from a Zod schema."
+  description='Creates a GraphQL query from a Zod schema.'
   examples={[
     {
       code: `const query = createQuery(userSchema, {
   operationName: 'GetUser',
   variables: { id: '123' }
 });`,
-      description: "Generates a query with operation name and variables"
-    }
+      description: 'Generates a query with operation name and variables',
+    },
   ]}
 />
 
@@ -146,15 +148,15 @@ export const InfoBox = ({ type = 'info', title, children }) => (
   </div>
 );
 
-<InfoBox type="info" title="Note">
+<InfoBox type='info' title='Note'>
   Remember to import the appropriate extension files when using zod2gql.
 </InfoBox>
 
-<InfoBox type="warning" title="Warning">
+<InfoBox type='warning' title='Warning'>
   Setting maxDepth too high with circular references can lead to very large queries.
 </InfoBox>
 
-<InfoBox type="tip" title="Tip">
+<InfoBox type='tip' title='Tip'>
   Use the inputTypeMap option for more control over complex input types in mutations.
 </InfoBox>
 

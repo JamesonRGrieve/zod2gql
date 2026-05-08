@@ -7,30 +7,33 @@ export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = 
 
   const operation = operationName ? ` ${operationName}` : '';
 
+  const inferMutationType = (key: string, value: unknown): string => {
+    if (typeof value === 'number') {
+      return 'Int';
+    }
+    if (typeof value === 'boolean') {
+      return 'Boolean';
+    }
+    if (typeof value === 'object' && value !== null) {
+      return `${key.charAt(0).toUpperCase() + key.slice(1)}Input`;
+    }
+    return 'String';
+  };
+
   // Format variables with special handling for input types
-  const formatMutationVariables = (variables?: Record<string, any>, inputTypeMap?: Record<string, string>): string => {
+  const formatMutationVariables = (variables?: Record<string, unknown>, inputTypeMap?: Record<string, string>): string => {
     if (!variables || Object.keys(variables).length === 0) {
       return '';
     }
+    const inputTypes = new Map(Object.entries(inputTypeMap ?? {}));
 
     return `(${Object.entries(variables)
       .map(([key, value]) => {
-        // Use provided input type or determine based on value
-        if (inputTypeMap && inputTypeMap[key]) {
-          return `$${key}: ${inputTypeMap[key]}!`;
+        const mapped = inputTypes.get(key);
+        if (mapped) {
+          return `$${key}: ${mapped}!`;
         }
-
-        // Otherwise determine the type based on the value
-        let type = 'String';
-        if (typeof value === 'number') {
-          type = 'Int';
-        } else if (typeof value === 'boolean') {
-          type = 'Boolean';
-        } else if (typeof value === 'object' && value !== null) {
-          // For mutations, objects are typically input types
-          type = `${key.charAt(0).toUpperCase() + key.slice(1)}Input`;
-        }
-        return `$${key}: ${type}!`;
+        return `$${key}: ${inferMutationType(key, value)}!`;
       })
       .join(', ')})`;
   };

@@ -6,7 +6,7 @@ import { createMutation } from '../src/mutation';
 import { createQuery } from '../src/query';
 import { createSubscription } from '../src/subscription';
 
-<Meta title="Documentation/Welcome" />
+<Meta title='Documentation/Welcome' />
 
 # zod2gql
 
@@ -47,7 +47,7 @@ const userSchema = z.object({
 // Generate a GraphQL query
 const query = createQuery(userSchema, {
   operationName: 'GetUser',
-  variables: { id: '123' }
+  variables: { id: '123' },
 });
 
 console.log(query);
@@ -64,7 +64,7 @@ query GetUser($id: String!) {
 
 // Using array schema with automatic pluralization
 const usersQuery = z.array(userSchema).toGQL('query', {
-  variables: { limit: 10 }
+  variables: { limit: 10 },
 });
 
 console.log(usersQuery);

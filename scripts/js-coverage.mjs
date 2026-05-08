@@ -19,30 +19,30 @@ const JS_RE = /\.(js|jsx|mjs|cjs)$/;
 const DECLARATION_RE = /\.d\.ts$/;
 
 function walk(dir, acc = []) {
-    let entries;
-    try {
-        entries = readdirSync(dir);
-    } catch {
-        return acc;
-    }
-    for (const entry of entries) {
-        const p = join(dir, entry);
-        const st = statSync(p);
-        if (st.isDirectory()) {
-            if (SKIP_DIRS.has(entry)) continue;
-            walk(p, acc);
-        } else {
-            acc.push(p);
-        }
-    }
+  let entries;
+  try {
+    entries = readdirSync(dir);
+  } catch {
     return acc;
+  }
+  for (const entry of entries) {
+    const p = join(dir, entry);
+    const st = statSync(p);
+    if (st.isDirectory()) {
+      if (SKIP_DIRS.has(entry)) continue;
+      walk(p, acc);
+    } else {
+      acc.push(p);
+    }
+  }
+  return acc;
 }
 
 const all = walk(SRC);
 const jsFiles = all
-    .filter((p) => JS_RE.test(p) && !DECLARATION_RE.test(p))
-    .map((p) => relative(process.cwd(), p))
-    .sort();
+  .filter((p) => JS_RE.test(p) && !DECLARATION_RE.test(p))
+  .map((p) => relative(process.cwd(), p))
+  .sort();
 
 const report = { count: jsFiles.length, files: jsFiles };
 writeFileSync(OUT, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
