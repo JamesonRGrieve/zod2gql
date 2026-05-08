@@ -1,12 +1,6 @@
-import { z } from 'zod';
-import {
-  GQLType,
-  ToGQLOptions,
-  formatFieldArguments,
-  formatVariablesDeclaration,
-  getOperationFieldName,
-  processFields,
-} from './index';
+import type { z } from 'zod';
+import type { ToGQLOptions } from './index';
+import { GQLType, formatFieldArguments, formatVariablesDeclaration, getOperationFieldName, processFields } from './index';
 
 // Process query operations
 export function processQuery(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
@@ -15,7 +9,6 @@ export function processQuery(schema: z.AnyZodObject, options: ToGQLOptions = {})
   const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
   const fieldArgs = formatFieldArguments(variables);
   const queryField = getOperationFieldName(schema, operationName);
-  console.log(operation, varsString, fieldArgs, queryField);
   // Generate the full GraphQL query operation
   return `${GQLType.Query}${operation}${varsString} {\n  ${queryField}${fieldArgs} {\n${processFields(schema, GQLType.Query, options, 2)}  }\n}`;
 }

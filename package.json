@@ -4,12 +4,19 @@
   "description": "Convert Zod schemas to GraphQL queries.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
   "scripts": {
-    "lint": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .js,.jsx,.ts,.tsx",
-    "lint:fix": "ESLINT_USE_FLAT_CONFIG=false eslint . --ext .js,.jsx,.ts,.tsx --fix",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
     "lint-fix": "npm run lint:fix",
-    "lint:ratchet": "ESLINT_USE_FLAT_CONFIG=false node scripts/lint-ratchet.mjs",
-    "lint:ratchet:update": "ESLINT_USE_FLAT_CONFIG=false node scripts/lint-ratchet.mjs --update",
+    "lint:ratchet": "node scripts/lint-ratchet.mjs",
+    "lint:ratchet:update": "node scripts/lint-ratchet.mjs --update",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
     "prettier": "npm run format",
@@ -24,15 +31,10 @@
     "js-coverage": "node scripts/js-coverage.mjs",
     "js-coverage:ratchet": "node scripts/js-coverage-ratchet.mjs",
     "js-coverage:ratchet:update": "node scripts/js-coverage-ratchet.mjs --update",
-    "compile": "rm -rf ./dist && tsc",
+    "compile": "rm -rf ./dist && tsc -p tsconfig.compile.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "storybook": "storybook dev -p 3001",
-    "storybook-build": "storybook build",
-    "storybook-run": "npx http-server storybook-static -p 3001",
-    "storybook-deploy": "storybook build && gh-pages -d storybook-static",
-    "storybook-test": "test-storybook --url http://localhost:3001 --browsers chromium,firefox,webkit",
-    "check": "npm run lint:ratchet && npm run format && npm run typecheck:ratchet && npm run symmetry:ratchet && npm run js-coverage:ratchet"
+    "check": "npm run lint:ratchet && npm run format && npm run typecheck:ratchet && npm run symmetry:ratchet && npm run js-coverage:ratchet && npm run test"
   },
   "repository": {
     "type": "git",
@@ -54,54 +56,24 @@
   "files": [
     "dist"
   ],
-  "_moduleAliases": {
-    "@": "."
-  },
-  "exports": {
-    ".": "./dist/index.js"
+  "peerDependencies": {
+    "zod": "^3.24.2"
   },
   "dependencies": {
-    "next": "^15.2.4",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "sharp": "^0.33.5",
     "zod": "^3.24.2"
   },
   "devDependencies": {
-    "@storybook/addon-docs": "^8.6.2",
-    "@storybook/blocks": "^8.6.11",
-    "@storybook/nextjs": "^8.6.11",
-    "@storybook/react": "^8.6.10",
-    "@storybook/test": "^8.6.10",
-    "@storybook/test-runner": "^0.22.0",
-    "@types/jest": "^29.5.14",
-    "@types/md5": "^2.3.5",
-    "@types/node": "^22.13.14",
-    "@types/react": "^18.3.12",
-    "@types/react-google-recaptcha": "^2.1.9",
-    "@types/react-simple-oauth2-login": "^0.5.5",
-    "@types/react-syntax-highlighter": "^15.5.13",
-    "@typescript-eslint/eslint-plugin": "^8.28.0",
-    "@typescript-eslint/parser": "^8.28.0",
-    "eslint": "^8.57.1",
-    "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-eslint-comments": "^3.2.0",
-    "eslint-plugin-import": "^2.31.0",
-    "eslint-plugin-jsx-a11y": "^6.10.2",
-    "eslint-plugin-no-use-extend-native": "^0.5.0",
-    "eslint-plugin-optimize-regex": "^1.2.1",
-    "eslint-plugin-prettier": "^5.2.5",
-    "eslint-plugin-promise": "^7.2.1",
-    "eslint-plugin-react": "^7.37.4",
-    "eslint-plugin-react-hooks": "^5.2.0",
-    "eslint-plugin-react-perf": "^3.3.3",
-    "eslint-plugin-security": "^3.0.1",
-    "eslint-plugin-sonarjs": "^0.25.1",
-    "eslint-plugin-storybook": "^0.12.0",
-    "eslint-plugin-unused-imports": "^4.1.4",
-    "prettier": "^3.5.3",
-    "storybook": "^8.6.10",
-    "typescript": "^5.8.2",
+    "@types/node": "^25.6.2",
+    "@typescript-eslint/eslint-plugin": "^8.59.2",
+    "@typescript-eslint/parser": "^8.59.2",
+    "eslint": "^9.39.4",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-import-resolver-typescript": "^4.4.4",
+    "eslint-plugin-import": "^2.32.0",
+    "eslint-plugin-prettier": "^5.5.5",
+    "globals": "^15.15.0",
+    "prettier": "^3.8.3",
+    "typescript": "^6.0.3",
     "vitest": "^4.1.5"
   }
 }

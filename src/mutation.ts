@@ -1,5 +1,6 @@
-import { z } from 'zod';
-import { GQLType, ToGQLOptions, formatFieldArguments, getOperationFieldName, processFields } from './index';
+import type { z } from 'zod';
+import type { ToGQLOptions } from './index';
+import { GQLType, formatFieldArguments, getOperationFieldName, processFields } from './index';
 
 // Process mutation operations
 export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {

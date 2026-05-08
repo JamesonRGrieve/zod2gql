@@ -1,9 +1,0 @@
-dist/*
-node_modules/
-storybook-static/
-babel.config.js
-postcss.config.js
-docs/
-scripts/
-.storybook/
-src/**/*.stories.*

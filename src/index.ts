@@ -38,11 +38,11 @@ export const pluralize = (word: string): string => {
 
   // Simple English pluralization rules
   if (word.endsWith('y')) {
-    return word.slice(0, -1) + 'ies';
+    return `${word.slice(0, -1)}ies`;
   } else if (word.endsWith('s') || word.endsWith('x') || word.endsWith('ch') || word.endsWith('sh')) {
-    return word + 'es';
+    return `${word}es`;
   } else {
-    return word + 's';
+    return `${word}s`;
   }
 };
 
