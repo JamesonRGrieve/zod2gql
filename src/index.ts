@@ -138,12 +138,7 @@ export const formatFieldArguments = (variables?: Record<string, any>): string =>
     .join(', ')})`;
 };
 
-export const processFields = (
-  schema: z.ZodObject<any>,
-  queryType: GQLType,
-  options: ToGQLOptions = {},
-  depth = 0,
-): string => {
+export const processFields = (schema: z.AnyZodObject, queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string => {
   const { maxDepth = 10 } = options;
 
   if (depth > maxDepth) {
@@ -194,7 +189,7 @@ export const processFields = (
 };
 
 // Process array operations
-export function processArrayQuery(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
+export function processArrayQuery(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
   const { operationName, variables } = options;
 
   // Get the element schema
@@ -216,7 +211,7 @@ export function processArrayQuery(schema: z.ZodArray<any>, options: ToGQLOptions
   return `${GQLType.Query}${operation}${varsString} {\n  ${queryField}${fieldArgs} {\n${processFields(elementSchema, GQLType.Query, options, 2)}  }\n}`;
 }
 
-export function processArrayMutation(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
+export function processArrayMutation(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
   const { operationName, variables } = options;
 
   // Get the element schema
@@ -238,7 +233,7 @@ export function processArrayMutation(schema: z.ZodArray<any>, options: ToGQLOpti
   return `${GQLType.Mutation}${operation}${varsString} {\n  ${mutationField}${fieldArgs} {\n${processFields(elementSchema, GQLType.Mutation, options, 2)}  }\n}`;
 }
 
-export function processArraySubscription(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
+export function processArraySubscription(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
   const { operationName, variables } = options;
 
   // Get the element schema

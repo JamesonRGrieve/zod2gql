@@ -9,7 +9,7 @@ import {
 } from './index';
 
 // Process query operations
-export function processQuery(schema: z.ZodObject<any>, options: ToGQLOptions = {}): string {
+export function processQuery(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   const { operationName, variables } = options;
   const operation = operationName ? ` ${operationName}` : '';
   const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
@@ -21,6 +21,6 @@ export function processQuery(schema: z.ZodObject<any>, options: ToGQLOptions = {
 }
 
 // Helper function to directly generate a query from a Zod schema
-export function createQuery(schema: z.ZodObject<any>, options: ToGQLOptions = {}): string {
+export function createQuery(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   return schema.toGQL(GQLType.Query, options);
 }

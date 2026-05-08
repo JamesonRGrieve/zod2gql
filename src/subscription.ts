@@ -9,7 +9,7 @@ import {
 } from './index';
 
 // Process subscription operations
-export function processSubscription(schema: z.ZodObject<any>, options: ToGQLOptions = {}): string {
+export function processSubscription(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   const { operationName, variables } = options;
 
   const operation = operationName ? ` ${operationName}` : '';
@@ -22,6 +22,6 @@ export function processSubscription(schema: z.ZodObject<any>, options: ToGQLOpti
 }
 
 // Helper function to directly generate a subscription from a Zod schema
-export function createSubscription(schema: z.ZodObject<any>, options: ToGQLOptions = {}): string {
+export function createSubscription(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   return schema.toGQL(GQLType.Subscription, options);
 }

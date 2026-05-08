@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { GQLType, ToGQLOptions, formatFieldArguments, getOperationFieldName, processFields } from './index';
 
 // Process mutation operations
-export function processMutation(schema: z.ZodObject<any>, options: ToGQLOptions = {}): string {
+export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   const { operationName, variables, inputTypeMap } = options;
 
   const operation = operationName ? ` ${operationName}` : '';
@@ -44,6 +44,6 @@ export function processMutation(schema: z.ZodObject<any>, options: ToGQLOptions 
 }
 
 // Helper function to directly generate a mutation from a Zod schema
-export function createMutation(schema: z.ZodObject<any>, options: ToGQLOptions = {}): string {
+export function createMutation(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   return schema.toGQL(GQLType.Mutation, options);
 }
