@@ -21,13 +21,16 @@
     "symmetry": "node scripts/coverage-symmetry.mjs",
     "symmetry:ratchet": "node scripts/symmetry-ratchet.mjs",
     "symmetry:ratchet:update": "node scripts/symmetry-ratchet.mjs --update",
+    "js-coverage": "node scripts/js-coverage.mjs",
+    "js-coverage:ratchet": "node scripts/js-coverage-ratchet.mjs",
+    "js-coverage:ratchet:update": "node scripts/js-coverage-ratchet.mjs --update",
     "compile": "rm -rf ./dist && tsc",
     "storybook": "storybook dev -p 3001",
     "storybook-build": "storybook build",
     "storybook-run": "npx http-server storybook-static -p 3001",
     "storybook-deploy": "storybook build && gh-pages -d storybook-static",
     "storybook-test": "test-storybook --url http://localhost:3001 --browsers chromium,firefox,webkit",
-    "check": "npm run lint:ratchet && npm run format && npm run typecheck:ratchet && npm run symmetry:ratchet"
+    "check": "npm run lint:ratchet && npm run format && npm run typecheck:ratchet && npm run symmetry:ratchet && npm run js-coverage:ratchet"
   },
   "repository": {
     "type": "git",
