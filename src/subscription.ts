@@ -10,7 +10,7 @@ import {
 
 // Process subscription operations
 export function processSubscription(schema: z.ZodObject<any>, options: ToGQLOptions = {}): string {
-  const { operationName, variables, maxDepth = 10 } = options;
+  const { operationName, variables } = options;
 
   const operation = operationName ? ` ${operationName}` : '';
   const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);

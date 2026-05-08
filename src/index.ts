@@ -19,10 +19,12 @@ export interface ToGQLOptions {
 }
 
 declare module 'zod' {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ZodObject<T> {
     toGQL(queryType?: GQLType, options?: ToGQLOptions, depth?: number): string;
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   interface ZodArray<T> {
     toGQL(queryType?: GQLType, options?: ToGQLOptions, depth?: number): string;
   }
@@ -30,7 +32,9 @@ declare module 'zod' {
 
 // Helper function to pluralize field names
 export const pluralize = (word: string): string => {
-  if (!word) return '';
+  if (!word) {
+    return '';
+  }
 
   // Simple English pluralization rules
   if (word.endsWith('y')) {
@@ -42,7 +46,7 @@ export const pluralize = (word: string): string => {
   }
 };
 
-export const getOperationFieldName = (schema: z.ZodTypeAny, operationName?: string, isArray: boolean = false): string => {
+export const getOperationFieldName = (schema: z.ZodTypeAny, operationName?: string, isArray = false): string => {
   let fieldName = '';
 
   if (operationName) {
@@ -99,7 +103,9 @@ export const formatVariablesDeclaration = (
 
       // More sophisticated type inference
       const inferType = (val: any): string => {
-        if (val === null) return 'String';
+        if (val === null) {
+          return 'String';
+        }
         if (Array.isArray(val)) {
           const elementType = val.length > 0 ? inferType(val[0]) : 'String';
           return `[${elementType}]`;
@@ -136,7 +142,7 @@ export const processFields = (
   schema: z.ZodObject<any>,
   queryType: GQLType,
   options: ToGQLOptions = {},
-  depth: number = 0,
+  depth = 0,
 ): string => {
   const { maxDepth = 10 } = options;
 
@@ -189,7 +195,7 @@ export const processFields = (
 
 // Process array operations
 export function processArrayQuery(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
-  const { operationName, variables, maxDepth = 10 } = options;
+  const { operationName, variables } = options;
 
   // Get the element schema
   const elementSchema = schema._def.type;
@@ -211,7 +217,7 @@ export function processArrayQuery(schema: z.ZodArray<any>, options: ToGQLOptions
 }
 
 export function processArrayMutation(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
-  const { operationName, variables, maxDepth = 10 } = options;
+  const { operationName, variables } = options;
 
   // Get the element schema
   const elementSchema = schema._def.type;
@@ -233,7 +239,7 @@ export function processArrayMutation(schema: z.ZodArray<any>, options: ToGQLOpti
 }
 
 export function processArraySubscription(schema: z.ZodArray<any>, options: ToGQLOptions = {}): string {
-  const { operationName, variables, maxDepth = 10 } = options;
+  const { operationName, variables } = options;
 
   // Get the element schema
   const elementSchema = schema._def.type;
@@ -255,11 +261,7 @@ export function processArraySubscription(schema: z.ZodArray<any>, options: ToGQL
 }
 
 // Router function that delegates to the appropriate operation type for ZodObject
-z.ZodObject.prototype.toGQL = function (
-  queryType: GQLType = GQLType.Query,
-  options: ToGQLOptions = {},
-  depth: number = 0,
-): string {
+z.ZodObject.prototype.toGQL = function (queryType: GQLType = GQLType.Query, options: ToGQLOptions = {}, depth = 0): string {
   // If we're processing nested fields, use the common functionality
   if (depth > 0) {
     return processFields(this, queryType, options, depth);
@@ -280,11 +282,7 @@ z.ZodObject.prototype.toGQL = function (
 };
 
 // Router function that delegates to the appropriate operation type for ZodArray
-z.ZodArray.prototype.toGQL = function (
-  queryType: GQLType = GQLType.Query,
-  options: ToGQLOptions = {},
-  depth: number = 0,
-): string {
+z.ZodArray.prototype.toGQL = function (queryType: GQLType = GQLType.Query, options: ToGQLOptions = {}, depth = 0): string {
   // If we're processing nested fields, return empty for now
   if (depth > 0) {
     return '';

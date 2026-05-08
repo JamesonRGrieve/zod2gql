@@ -114,7 +114,7 @@
     "no-script-url": "warn", // Disallow javascript: urls.
     "no-self-compare": "warn", // Disallow comparisons where both sides are exactly the same.
     "no-sequences": "warn", // Disallow comma operators.
-    "no-underscore-dangle": "warn", // Disallow dangling underscores in identifiers.
+    "no-underscore-dangle": ["warn", { "allow": ["_def", "_input", "_output", "_type"] }], // Allow Zod's internal-API underscore identifiers.
     "no-unmodified-loop-condition": "warn", // Disallow unmodified loop conditions.
     "no-unused-expressions": "warn", // Disallow unused expressions.
     "no-unused-vars": "off", // Off in favor of @typescript-eslint/no-unused-vars.

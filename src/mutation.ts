@@ -3,7 +3,7 @@ import { GQLType, ToGQLOptions, formatFieldArguments, getOperationFieldName, pro
 
 // Process mutation operations
 export function processMutation(schema: z.ZodObject<any>, options: ToGQLOptions = {}): string {
-  const { operationName, variables, maxDepth = 10, inputTypeMap } = options;
+  const { operationName, variables, inputTypeMap } = options;
 
   const operation = operationName ? ` ${operationName}` : '';
 
