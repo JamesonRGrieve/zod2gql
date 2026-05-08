@@ -653,3 +653,11 @@ FodyWeavers.xsd
 
 metadata.json
 test.ipynb
+
+# Ratchet coverage report (regenerated; baselines are committed without .json suffix)
+.ts-coverage.json
+
+# Playwright/Vitest run artifacts
+playwright-report/
+test-results/
+.vitest-cache/

@@ -1,0 +1,16 @@
+{
+  "totals": {
+    "any": 0,
+    "asAny": 1,
+    "tsExpectError": 0,
+    "tsIgnore": 0
+  },
+  "byDir": {
+    "_root": {
+      "any": 0,
+      "asAny": 1,
+      "tsExpectError": 0,
+      "tsIgnore": 0
+    }
+  }
+}
