@@ -5,7 +5,7 @@ import { GQLType, formatFieldArguments, formatVariablesDeclaration, getOperation
 // Process query operations
 export function processQuery(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   const { operationName, variables } = options;
-  const operation = operationName ? ` ${operationName}` : '';
+  const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
   const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
   const fieldArgs = formatFieldArguments(variables);
   const queryField = getOperationFieldName(schema, operationName);

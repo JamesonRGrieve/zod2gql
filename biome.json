@@ -1,0 +1,40 @@
+{
+  "$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
+  "assist": { "actions": { "source": { "organizeImports": "on" } } },
+  "linter": {
+    "enabled": true,
+    "rules": {
+      "recommended": true,
+      "suspicious": {
+        "noRedeclare": "off",
+        "noExplicitAny": "warn"
+      },
+      "complexity": {
+        "noThisInStatic": "off",
+        "useLiteralKeys": "off"
+      },
+      "style": {
+        "useFilenamingConvention": {
+          "level": "warn",
+          "options": {
+            "filenameCases": ["kebab-case"],
+            "strictCase": false,
+            "requireAscii": true
+          }
+        }
+      }
+    },
+    "includes": [
+      "**",
+      "!**/node_modules",
+      "!**/dist",
+      "!**/coverage",
+      "!**/*.test.ts",
+      "!**/*.spec.ts",
+      "!**/*.stories.ts"
+    ]
+  },
+  "formatter": {
+    "enabled": false
+  }
+}

@@ -6,7 +6,7 @@ import { GQLType, formatFieldArguments, formatVariablesDeclaration, getOperation
 export function processSubscription(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   const { operationName, variables } = options;
 
-  const operation = operationName ? ` ${operationName}` : '';
+  const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
   const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
   const fieldArgs = formatFieldArguments(variables);
   const subscriptionField = getOperationFieldName(schema, operationName);

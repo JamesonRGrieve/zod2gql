@@ -2,7 +2,7 @@
 
 This is a **TypeScript translator library** that converts Zod schemas to GraphQL schemas. Consumed by `client-framework` and other downstream apps as a submodule. Workspace-level TS/JS standards (Direction, Casting, Ratchets, ESLint, TS, Test, Pre-commit, Hard Rules) live in `../CLAUDE.md` §7 and apply here. This file documents the rules **specific** to this repo.
 
-Package manager: **npm**. Toolchain: TypeScript + Babel + ESLint + Prettier. (Storybook config exists for parity with sibling repos but the package itself has no UI.)
+Package manager: **pnpm** (exclusive). Toolchain: TypeScript + ESLint + Prettier + Vitest. (Storybook config exists for parity with sibling repos but the package itself has no UI.)
 
 ---
 
@@ -38,18 +38,18 @@ None at the repo level — this is a leaf library. When consumed as a submodule 
 ## Commands
 
 ```bash
-npm install
-npm run lint / npm run lint:fix
-npm run format / npm run format:fix
-npm run typecheck                     # tsc --noEmit
-npm run test / npm run test:watch
-npm run compile                       # tsc → dist/
+pnpm install
+pnpm run lint / pnpm run lint:fix
+pnpm run format / pnpm run format:fix
+pnpm run typecheck                     # tsc --noEmit
+pnpm run test / pnpm run test:watch
+pnpm run compile                       # tsc → dist/
 
 # Ratchets
-npm run lint:ratchet[:update]
-npm run typecheck:ratchet[:update]
-npm run symmetry:ratchet[:update]
-npm run js-coverage:ratchet[:update]
+pnpm run lint:ratchet[:update]
+pnpm run typecheck:ratchet[:update]
+pnpm run symmetry:ratchet[:update]
+pnpm run js-coverage:ratchet[:update]
 
-npm run check                         # all four ratchets + format
+pnpm run check                         # all four ratchets + format
 ```

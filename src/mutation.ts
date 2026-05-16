@@ -6,7 +6,7 @@ import { GQLType, formatFieldArguments, getOperationFieldName, processFields } f
 export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
   const { operationName, variables, inputTypeMap } = options;
 
-  const operation = operationName ? ` ${operationName}` : '';
+  const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
 
   const inferMutationType = (key: string, value: unknown): string => {
     if (typeof value === 'number') {
@@ -22,16 +22,16 @@ export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = 
   };
 
   // Format variables with special handling for input types
-  const formatMutationVariables = (variables?: Record<string, unknown>, inputTypeMap?: Record<string, string>): string => {
-    if (!variables || Object.keys(variables).length === 0) {
+  const formatMutationVariables = (vars?: Record<string, unknown>, inputMap?: Record<string, string>): string => {
+    if (!vars || Object.keys(vars).length === 0) {
       return '';
     }
-    const inputTypes = new Map(Object.entries(inputTypeMap ?? {}));
+    const inputTypes = new Map(Object.entries(inputMap ?? {}));
 
-    return `(${Object.entries(variables)
+    return `(${Object.entries(vars)
       .map(([key, value]) => {
         const mapped = inputTypes.get(key);
-        if (mapped) {
+        if (mapped !== undefined && mapped !== '') {
           return `$${key}: ${mapped}!`;
         }
         return `$${key}: ${inferMutationType(key, value)}!`;

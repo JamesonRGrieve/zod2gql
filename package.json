@@ -14,14 +14,14 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "lint-fix": "npm run lint:fix",
+    "lint-fix": "pnpm lint:fix",
     "lint:ratchet": "node scripts/lint-ratchet.mjs",
     "lint:ratchet:update": "node scripts/lint-ratchet.mjs --update",
     "format": "prettier --check .",
     "format:fix": "prettier --write .",
-    "prettier": "npm run format",
-    "prettier-fix": "npm run format:fix",
-    "fix": "npm run format:fix && npm run lint:fix",
+    "prettier": "pnpm format",
+    "prettier-fix": "pnpm format:fix",
+    "fix": "pnpm format:fix && pnpm lint:fix",
     "typecheck": "tsc --noEmit",
     "typecheck:ratchet": "node scripts/typecheck-ratchet.mjs",
     "typecheck:ratchet:update": "node scripts/typecheck-ratchet.mjs --update",
@@ -31,10 +31,28 @@
     "js-coverage": "node scripts/js-coverage.mjs",
     "js-coverage:ratchet": "node scripts/js-coverage-ratchet.mjs",
     "js-coverage:ratchet:update": "node scripts/js-coverage-ratchet.mjs --update",
+    "knip": "knip",
+    "knip:ratchet": "node scripts/knip-ratchet.mjs",
+    "knip:ratchet:update": "node scripts/knip-ratchet.mjs --update",
+    "deps": "depcruise --config .dependency-cruiser.cjs src",
+    "deps:ratchet": "node scripts/depcruise-ratchet.mjs",
+    "deps:ratchet:update": "node scripts/depcruise-ratchet.mjs --update",
+    "type-coverage": "type-coverage --strict --no-detail",
+    "type-coverage:ratchet": "node scripts/type-coverage-ratchet.mjs",
+    "type-coverage:ratchet:update": "node scripts/type-coverage-ratchet.mjs --update",
+    "strict:ratchet": "node scripts/strict-ratchet.mjs",
+    "strict:ratchet:update": "node scripts/strict-ratchet.mjs --update",
+    "test:typecheck:ratchet": "node scripts/strict-ratchet.mjs --config tsconfig.test.json --baseline .test-typecheck-baseline --label test-typecheck-ratchet",
+    "test:typecheck:ratchet:update": "node scripts/strict-ratchet.mjs --config tsconfig.test.json --baseline .test-typecheck-baseline --label test-typecheck-ratchet --update",
+    "lockfile:validate": "node scripts/lockfile-validate.mjs",
+    "biome": "biome lint src/",
+    "biome:ratchet": "node scripts/biome-ratchet.mjs",
+    "biome:ratchet:update": "node scripts/biome-ratchet.mjs --update",
+    "size-limit": "size-limit",
     "compile": "rm -rf ./dist && tsc -p tsconfig.compile.json",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "npm run lint:ratchet && npm run format && npm run typecheck:ratchet && npm run symmetry:ratchet && npm run js-coverage:ratchet && npm run test"
+    "check": "pnpm lint:ratchet && pnpm format && pnpm typecheck:ratchet && pnpm symmetry:ratchet && pnpm js-coverage:ratchet && pnpm knip:ratchet && pnpm deps:ratchet && pnpm type-coverage:ratchet && pnpm strict:ratchet && pnpm test:typecheck:ratchet && pnpm lockfile:validate && pnpm test && pnpm biome:ratchet && pnpm compile && pnpm size-limit"
   },
   "repository": {
     "type": "git",
@@ -60,20 +78,27 @@
     "zod": "^3.24.2"
   },
   "dependencies": {
-    "zod": "^3.24.2"
+    "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@types/node": "^25.6.2",
-    "@typescript-eslint/eslint-plugin": "^8.59.2",
-    "@typescript-eslint/parser": "^8.59.2",
-    "eslint": "^9.39.4",
+    "@biomejs/biome": "^2.4.15",
+    "@eslint/js": "^10.0.1",
+    "@size-limit/preset-small-lib": "^12.1.0",
+    "@types/node": "^25.8.0",
+    "@typescript-eslint/eslint-plugin": "^8.59.3",
+    "@typescript-eslint/parser": "^8.59.3",
+    "dependency-cruiser": "^17.4.0",
+    "eslint": "^10.4.0",
     "eslint-config-prettier": "^10.1.8",
     "eslint-import-resolver-typescript": "^4.4.4",
     "eslint-plugin-import": "^2.32.0",
     "eslint-plugin-prettier": "^5.5.5",
-    "globals": "^15.15.0",
+    "globals": "^17.6.0",
+    "knip": "^6.14.1",
     "prettier": "^3.8.3",
+    "size-limit": "^12.1.0",
+    "type-coverage": "^2.29.7",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   }
 }

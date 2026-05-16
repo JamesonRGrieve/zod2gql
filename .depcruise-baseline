@@ -1,0 +1,8 @@
+{
+  "strict": [],
+  "errors": 0,
+  "warnings": 3,
+  "byRule": {
+    "no-circular": 3
+  }
+}

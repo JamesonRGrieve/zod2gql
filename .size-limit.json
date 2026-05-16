@@ -1,0 +1,14 @@
+[
+  {
+    "name": "dist/index.js (ESM, minified + gzipped)",
+    "path": "dist/index.js",
+    "limit": "2.5 KB"
+  },
+  {
+    "name": "dist/index.d.ts (type definitions, raw)",
+    "path": "dist/index.d.ts",
+    "limit": "512 B",
+    "gzip": false,
+    "brotli": false
+  }
+]
