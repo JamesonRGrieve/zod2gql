@@ -1,7 +1,9 @@
 import { z } from 'zod';
-import { processMutation } from './mutation';
-import { processQuery } from './query';
-import { processSubscription } from './subscription';
+import { createMutation, processMutation } from './mutation';
+import { createQuery, processQuery } from './query';
+import { createSubscription, processSubscription } from './subscription';
+
+export { createMutation, createQuery, createSubscription, processMutation, processQuery, processSubscription };
 
 // Define an enum for GraphQL operation types
 export enum GQLType {
