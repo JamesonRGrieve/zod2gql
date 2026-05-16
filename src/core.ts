@@ -50,7 +50,7 @@ const fieldNameFromObject = (schema: z.AnyZodObject): string => {
   if (schema.description !== undefined && schema.description !== '') {
     return lowercaseFirst(schema.description);
   }
-  const typeName = (schema._def as { typeName?: string }).typeName ?? '';
+  const typeName: string = schema._def.typeName;
   if (typeName !== '' && typeName !== 'ZodObject') {
     return lowercaseFirst(typeName);
   }
