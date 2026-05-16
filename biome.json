@@ -24,15 +24,7 @@
         }
       }
     },
-    "includes": [
-      "**",
-      "!**/node_modules",
-      "!**/dist",
-      "!**/coverage",
-      "!**/*.test.ts",
-      "!**/*.spec.ts",
-      "!**/*.stories.ts"
-    ]
+    "includes": ["**", "!**/node_modules", "!**/dist", "!**/coverage", "!**/*.test.ts", "!**/*.spec.ts", "!**/*.stories.ts"]
   },
   "formatter": {
     "enabled": false
