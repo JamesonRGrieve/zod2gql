@@ -2,11 +2,7 @@
   "componentsTotal": 0,
   "sourcesTotal": 5,
   "componentsMissingStoriesCount": 0,
-  "sourcesMissingTestsCount": 3,
+  "sourcesMissingTestsCount": 0,
   "componentsMissingStories": [],
-  "sourcesMissingTests": [
-    "src/mutation.ts",
-    "src/query.ts",
-    "src/subscription.ts"
-  ]
+  "sourcesMissingTests": []
 }
