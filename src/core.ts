@@ -147,7 +147,8 @@ const renderField = (
 ): string => {
   const unwrappedSchema: z.ZodTypeAny =
     fieldSchema instanceof z.ZodOptional || fieldSchema instanceof z.ZodNullable
-      ? (fieldSchema._def.innerType as z.ZodTypeAny)
+      ? // type-coverage:ignore-next-line - Zod's ZodOptional/ZodNullable._def.innerType is typed as ZodTypeAny (any-leaking generics) at the library boundary
+        (fieldSchema._def.innerType as z.ZodTypeAny)
       : fieldSchema;
 
   if (isZodObject(unwrappedSchema)) {

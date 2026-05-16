@@ -1,7 +1,14 @@
 #!/usr/bin/env node
 /**
- * type-coverage ratchet. Runs `type-coverage --strict --no-detail` and
- * extracts the percentage of source positions whose inferred type is non-`any`.
+ * type-coverage ratchet. Runs `type-coverage --strict --ignore-nested --no-detail`
+ * and extracts the percentage of source positions whose inferred type is non-`any`.
+ *
+ * `--ignore-nested` discounts `any` appearing only inside type arguments
+ * (e.g. Zod's `ZodType<any, any, any>`). The translator's input surface is
+ * Zod schemas — internally Zod uses `any` in its generic params and we
+ * can't eliminate that without forking the library. The flag lets us
+ * measure coverage of *our* code without being held hostage to Zod's
+ * internal typing choices.
  *
  * Baseline file: .type-coverage-baseline — plain number, e.g. `97.42`.
  *
@@ -23,7 +30,7 @@ const updateMode = args.has('--update');
 
 let stdout = '';
 try {
-  stdout = execSync('./node_modules/.bin/type-coverage --strict --no-detail', {
+  stdout = execSync('./node_modules/.bin/type-coverage --strict --ignore-nested --no-detail', {
     encoding: 'utf8',
     stdio: ['ignore', 'pipe', 'pipe'],
     maxBuffer: 16 * 1024 * 1024,

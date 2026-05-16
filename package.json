@@ -37,7 +37,7 @@
     "deps": "depcruise --config .dependency-cruiser.cjs src",
     "deps:ratchet": "node scripts/depcruise-ratchet.mjs",
     "deps:ratchet:update": "node scripts/depcruise-ratchet.mjs --update",
-    "type-coverage": "type-coverage --strict --no-detail",
+    "type-coverage": "type-coverage --strict --ignore-nested --no-detail",
     "type-coverage:ratchet": "node scripts/type-coverage-ratchet.mjs",
     "type-coverage:ratchet:update": "node scripts/type-coverage-ratchet.mjs --update",
     "strict:ratchet": "node scripts/strict-ratchet.mjs",
@@ -49,7 +49,7 @@
     "biome:ratchet": "node scripts/biome-ratchet.mjs",
     "biome:ratchet:update": "node scripts/biome-ratchet.mjs --update",
     "size-limit": "size-limit",
-    "compile": "rm -rf ./dist && tsc -p tsconfig.compile.json",
+    "compile": "rm -rf ./dist tsconfig.compile.tsbuildinfo && tsc -p tsconfig.compile.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "pnpm lint:ratchet && pnpm format && pnpm typecheck:ratchet && pnpm symmetry:ratchet && pnpm js-coverage:ratchet && pnpm knip:ratchet && pnpm deps:ratchet && pnpm type-coverage:ratchet && pnpm strict:ratchet && pnpm test:typecheck:ratchet && pnpm lockfile:validate && pnpm test && pnpm biome:ratchet && pnpm compile && pnpm size-limit"
