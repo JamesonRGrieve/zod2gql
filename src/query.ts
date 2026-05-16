@@ -1,6 +1,6 @@
 import type { z } from 'zod';
-import type { ToGQLOptions } from './index';
-import { GQLType, formatFieldArguments, formatVariablesDeclaration, getOperationFieldName, processFields } from './index';
+import type { ToGQLOptions } from './core';
+import { GQLType, formatFieldArguments, formatVariablesDeclaration, getOperationFieldName, processFields } from './core';
 
 // Process query operations
 export function processQuery(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {

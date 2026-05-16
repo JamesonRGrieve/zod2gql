@@ -1,8 +1,8 @@
 {
-  "strict": [],
+  "strict": [
+    "no-circular"
+  ],
   "errors": 0,
-  "warnings": 3,
-  "byRule": {
-    "no-circular": 3
-  }
+  "warnings": 0,
+  "byRule": {}
 }
