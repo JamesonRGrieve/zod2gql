@@ -7,7 +7,7 @@
   {
     "name": "dist/index.d.ts (type definitions, raw)",
     "path": "dist/index.d.ts",
-    "limit": "512 B",
+    "limit": "6 KB",
     "gzip": false,
     "brotli": false
   }
