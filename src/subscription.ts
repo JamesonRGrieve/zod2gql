@@ -1,6 +1,12 @@
 import type { z } from 'zod';
-import type { ToGQLOptions } from './core';
-import { GQLType, formatFieldArguments, formatVariablesDeclaration, getOperationFieldName, processFields } from './core';
+import {
+  GQLType,
+  type ToGQLOptions,
+  formatFieldArguments,
+  formatVariablesDeclaration,
+  getOperationFieldName,
+  processFields,
+} from './core';
 
 // Process subscription operations
 export function processSubscription(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {

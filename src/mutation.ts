@@ -1,6 +1,12 @@
 import type { z } from 'zod';
-import type { ToGQLOptions } from './core';
-import { GQLType, formatFieldArguments, getOperationFieldName, processFields } from './core';
+import {
+  GQLType,
+  type GraphQLVariableValue,
+  type ToGQLOptions,
+  formatFieldArguments,
+  getOperationFieldName,
+  processFields,
+} from './core';
 
 // Process mutation operations
 export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
@@ -8,7 +14,7 @@ export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = 
 
   const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
 
-  const inferMutationType = (key: string, value: unknown): string => {
+  const inferMutationType = (key: string, value: GraphQLVariableValue): string => {
     if (typeof value === 'number') {
       return 'Int';
     }
@@ -22,7 +28,10 @@ export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = 
   };
 
   // Format variables with special handling for input types
-  const formatMutationVariables = (vars?: Record<string, unknown>, inputMap?: Record<string, string>): string => {
+  const formatMutationVariables = (
+    vars?: Record<string, GraphQLVariableValue>,
+    inputMap?: Record<string, string>,
+  ): string => {
     if (!vars || Object.keys(vars).length === 0) {
       return '';
     }

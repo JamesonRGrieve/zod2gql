@@ -7,10 +7,21 @@ export enum GQLType {
   Subscription = 'subscription',
 }
 
+// JSON-shaped value space for GraphQL variables. The translator inspects these
+// raw runtime values to infer GraphQL scalar/input types; this is the narrow
+// type they are validated to at the public boundary (in place of `unknown`).
+export type GraphQLVariableValue =
+  | string
+  | number
+  | boolean
+  | null
+  | GraphQLVariableValue[]
+  | { [key: string]: GraphQLVariableValue };
+
 // Define interface for toGQL options
 export interface ToGQLOptions {
   operationName?: string;
-  variables?: Record<string, unknown>;
+  variables?: Record<string, GraphQLVariableValue>;
   maxDepth?: number;
   inputTypeMap?: Record<string, string>;
 }
@@ -78,35 +89,29 @@ export const getOperationFieldName = (schema: z.ZodTypeAny, operationName?: stri
   return '';
 };
 
-const inferGraphQLType = (key: string, val: unknown): string => {
-  if (val === null) {
+const inferGraphQLType = (key: string, val: GraphQLVariableValue | undefined): string => {
+  if (val === null || val === undefined) {
     return 'String';
   }
   if (Array.isArray(val)) {
     const elementType = val.length > 0 ? inferGraphQLType(key, val[0]) : 'String';
     return `[${elementType}]`;
   }
-  switch (typeof val) {
-    case 'number':
-      return Number.isInteger(val) ? 'Int' : 'Float';
-    case 'boolean':
-      return 'Boolean';
-    case 'object':
-      return `${key.charAt(0).toUpperCase() + key.slice(1)}Input`;
-    case 'string':
-    case 'bigint':
-    case 'symbol':
-    case 'undefined':
-    case 'function':
-      return 'String';
-    default:
-      return 'String';
+  if (typeof val === 'number') {
+    return Number.isInteger(val) ? 'Int' : 'Float';
   }
+  if (typeof val === 'boolean') {
+    return 'Boolean';
+  }
+  if (typeof val === 'object') {
+    return `${key.charAt(0).toUpperCase() + key.slice(1)}Input`;
+  }
+  return 'String';
 };
 
 // Format variables declaration for GraphQL
 export const formatVariablesDeclaration = (
-  variables?: Record<string, unknown>,
+  variables?: Record<string, GraphQLVariableValue>,
   inputTypeMap?: Record<string, string>,
 ): string => {
   if (!variables || Object.keys(variables).length === 0) {
@@ -127,7 +132,7 @@ export const formatVariablesDeclaration = (
 };
 
 // Format field arguments for GraphQL
-export const formatFieldArguments = (variables?: Record<string, unknown>): string => {
+export const formatFieldArguments = (variables?: Record<string, GraphQLVariableValue>): string => {
   if (!variables || Object.keys(variables).length === 0) {
     return '';
   }
@@ -163,7 +168,7 @@ const renderField = (
   return `${indent}${fieldName}\n`;
 };
 
-export const processFields = (schema: z.AnyZodObject, queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string => {
+export function processFields(schema: z.AnyZodObject, queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string {
   const { maxDepth = 10 } = options;
 
   if (depth > maxDepth) {
@@ -183,7 +188,7 @@ export const processFields = (schema: z.AnyZodObject, queryType: GQLType, option
   }
 
   return query;
-};
+}
 
 const ARRAY_ELEMENT_NOT_OBJECT_ERROR = 'Array element must be a ZodObject';
 
