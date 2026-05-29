@@ -50,6 +50,8 @@
     "biome:ratchet:update": "node scripts/biome-ratchet.mjs --update",
     "size-limit": "size-limit",
     "compile": "rm -rf ./dist tsconfig.compile.tsbuildinfo && tsc -p tsconfig.compile.json",
+    "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "precommit": "pnpm check",
     "test": "vitest run",
     "test:watch": "vitest",
     "check": "pnpm lint:ratchet && pnpm format && pnpm typecheck:ratchet && pnpm symmetry:ratchet && pnpm js-coverage:ratchet && pnpm knip:ratchet && pnpm deps:ratchet && pnpm type-coverage:ratchet && pnpm strict:ratchet && pnpm test:typecheck:ratchet && pnpm lockfile:validate && pnpm test && pnpm biome:ratchet && pnpm compile && pnpm size-limit"
