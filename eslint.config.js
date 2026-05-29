@@ -1,14 +1,44 @@
 import js from '@eslint/js';
 import tseslint from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import vitest from '@vitest/eslint-plugin';
 import importPlugin from 'eslint-plugin-import';
 import prettierConfig from 'eslint-config-prettier';
+// Maintained, ESLint 9/10-compatible fork. The legacy `eslint-plugin-eslint-comments`
+// is dead on ESLint 10 (it calls the removed `context.getSourceCode()`).
+import eslintComments from '@eslint-community/eslint-plugin-eslint-comments';
 import prettierPlugin from 'eslint-plugin-prettier';
+import promise from 'eslint-plugin-promise';
 import globals from 'globals';
+
+const eslintCommentsRecommended = eslintComments.configs?.recommended?.rules ?? {
+  '@eslint-community/eslint-comments/no-unused-disable': 'warn',
+};
+const promiseRecommended = promise.configs?.recommended?.rules ?? {
+  'promise/catch-or-return': 'warn',
+  'promise/no-nesting': 'warn',
+  'promise/no-return-wrap': 'warn',
+  'promise/always-return': 'warn',
+};
 
 const sharedRules = {
   ...js.configs.recommended.rules,
   ...tseslint.configs.recommended.rules,
+  ...eslintCommentsRecommended,
+  ...promiseRecommended,
+  '@eslint-community/eslint-comments/no-unused-disable': 'warn',
+  'promise/catch-or-return': 'warn',
+  'promise/no-nesting': 'warn',
+  'promise/no-return-wrap': 'warn',
+  'promise/always-return': 'warn',
+
+  'no-use-before-define': 'off',
+  '@typescript-eslint/no-use-before-define': ['warn', { functions: false, classes: false }],
+  '@typescript-eslint/no-unused-expressions': 'warn',
+  '@typescript-eslint/no-implied-eval': 'warn',
+  'no-new-native-nonconstructor': 'warn',
+  'no-duplicate-imports': 'warn',
+  'no-self-assign': 'warn',
 
   '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }],
   '@typescript-eslint/no-explicit-any': 'warn',
@@ -89,7 +119,63 @@ const sharedRules = {
   '@typescript-eslint/return-await': ['warn', 'in-try-catch'],
 
   'no-shadow': 'off',
-  '@typescript-eslint/no-shadow': ['warn', { builtinGlobals: false, hoist: 'all' }],
+  '@typescript-eslint/no-shadow': [
+    'warn',
+    {
+      builtinGlobals: true,
+      hoist: 'all',
+      allow: [
+        'event',
+        'name',
+        'location',
+        'origin',
+        'parent',
+        'prompt',
+        'toolbar',
+        'status',
+        'length',
+        'top',
+        'close',
+        'open',
+        'stop',
+        'history',
+        'confirm',
+        'document',
+        'innerWidth',
+        'innerHeight',
+        'source',
+        'selection',
+        'match',
+      ],
+    },
+  ],
+  '@typescript-eslint/naming-convention': [
+    'warn',
+    { selector: 'default', format: ['camelCase'], leadingUnderscore: 'allow', trailingUnderscore: 'allow' },
+    {
+      selector: 'variable',
+      format: ['camelCase', 'UPPER_CASE', 'PascalCase'],
+      leadingUnderscore: 'allow',
+      trailingUnderscore: 'allow',
+    },
+    { selector: 'parameter', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
+    { selector: 'function', format: ['camelCase', 'PascalCase'] },
+    { selector: 'method', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
+    { selector: 'typeMethod', format: ['camelCase', 'PascalCase'], leadingUnderscore: 'allow' },
+    { selector: 'classicAccessor', format: ['camelCase', 'UPPER_CASE'] },
+    { selector: 'memberLike', modifiers: ['private'], format: ['camelCase'], leadingUnderscore: 'allow' },
+    {
+      selector: 'classProperty',
+      modifiers: ['static'],
+      format: ['UPPER_CASE', 'camelCase', 'PascalCase'],
+      leadingUnderscore: 'allow',
+    },
+    { selector: 'typeLike', format: ['PascalCase'] },
+    { selector: 'enumMember', format: ['UPPER_CASE', 'PascalCase'] },
+    { selector: 'objectLiteralProperty', format: null },
+    { selector: 'typeProperty', format: null },
+    { selector: 'import', format: ['camelCase', 'PascalCase'] },
+  ],
   'no-self-compare': 'warn',
   'no-template-curly-in-string': 'warn',
   'no-unreachable-loop': 'warn',
@@ -128,6 +214,11 @@ const sharedRules = {
     {
       selector: "TSAsExpression[typeAnnotation.type='TSAnyKeyword']",
       message: 'Avoid `as any`. Fix the type at its source.',
+    },
+    {
+      selector: 'TSTypeAnnotation > TSUnknownKeyword',
+      message:
+        '`unknown` outside `catch` is a smell. Validate at the boundary entry (Zod / type guard) and propagate the narrow type. Catch-clause variables are exempt.',
     },
   ],
 
@@ -198,6 +289,8 @@ export default [
       '@typescript-eslint': tseslint,
       import: importPlugin,
       prettier: prettierPlugin,
+      '@eslint-community/eslint-comments': eslintComments,
+      promise,
     },
     settings: {
       'import/resolver': {
@@ -219,6 +312,22 @@ export default [
       '@typescript-eslint/no-unsafe-argument': 'off',
       '@typescript-eslint/unbound-method': 'off',
       '@typescript-eslint/no-non-null-assertion': 'off',
+    },
+  },
+  {
+    files: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/**/*.ts'],
+    plugins: { vitest },
+    rules: {
+      ...vitest.configs.recommended.rules,
+      'vitest/no-focused-tests': 'error',
+      'vitest/no-disabled-tests': 'error',
+      'vitest/no-identical-title': 'error',
+      'vitest/consistent-test-it': ['error', { fn: 'it', withinDescribe: 'it' }],
+      'vitest/valid-expect': 'error',
+      'vitest/valid-title': 'error',
+      'vitest/no-conditional-tests': 'warn',
+      'vitest/no-conditional-in-test': 'warn',
+      'vitest/no-conditional-expect': 'error',
     },
   },
 ];

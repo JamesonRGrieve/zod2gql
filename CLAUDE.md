@@ -53,3 +53,26 @@ pnpm run js-coverage:ratchet[:update]
 
 pnpm run check                         # all four ratchets + format
 ```
+
+---
+
+## Ratchet Re-seed Required
+
+The ESLint flat config was hardened to foundry parity (workspace `../CLAUDE.md` §7.5):
+new warn-level rules were added (`@typescript-eslint/naming-convention`,
+`@typescript-eslint/no-use-before-define`, `@typescript-eslint/no-unused-expressions`,
+`@typescript-eslint/no-implied-eval`, the `eslint-comments` / `promise` recommended
+sets, a stricter `no-shadow`, a 4th `no-restricted-syntax` selector, and the `@vitest`
+test-file rules).
+
+After `pnpm install`, the ESLint warning baseline **must be re-seeded** because these
+new warn-level rules will surface previously-uncounted warnings. Run:
+
+```bash
+pnpm lint:ratchet:update
+```
+
+and commit the updated `.eslint-warning-baseline` **in the same commit** that lands
+this config change (per workspace `../CLAUDE.md` §7.3 — a ratchet baseline bump rides
+the commit that changes the metric). Do not bypass the pre-commit hook with
+`--no-verify`.
