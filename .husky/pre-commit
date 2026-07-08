@@ -1,0 +1,13 @@
+pnpm exec lint-staged
+
+echo "[pre-commit] running tsc ratchet…"
+pnpm -s typecheck:ratchet
+
+echo "[pre-commit] running eslint ratchet…"
+pnpm -s lint:ratchet
+
+echo "[pre-commit] running ts coverage ratchet…"
+pnpm -s ts:ratchet
+
+echo "[pre-commit] running Vitest…"
+./node_modules/.bin/vitest run
