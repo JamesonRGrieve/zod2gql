@@ -1,6 +1,6 @@
 # Claude Code Instructions — zod2gql
 
-This is a **TypeScript translator library** that converts Zod schemas to GraphQL schemas. Consumed by `client-framework` and other downstream apps as a submodule. Workspace-level TS/JS standards (Direction, Casting, Ratchets, ESLint, TS, Test, Pre-commit, Hard Rules) live in `../CLAUDE.md` §7 and apply here. This file documents the rules **specific** to this repo.
+This is a **TypeScript translator library** that converts Zod schemas to GraphQL schemas. Consumed by `zephyrex` and other downstream apps as a submodule. Workspace-level TS/JS standards (Direction, Casting, Ratchets, ESLint, TS, Test, Pre-commit, Hard Rules) live in `../CLAUDE.md` §7 and apply here. This file documents the rules **specific** to this repo.
 
 Package manager: **pnpm** (exclusive). Toolchain: TypeScript + ESLint + Prettier + Vitest. (Storybook config exists for parity with sibling repos but the package itself has no UI.)
 
@@ -31,7 +31,7 @@ Outstanding nice-to-haves (not blocking):
 
 ## Path Aliases
 
-None at the repo level — this is a leaf library. When consumed as a submodule in `client-framework`, the parent's `tsconfig.json` declares `zod2gql` → `./src/lib/zod2gql/src`. Don't add aliases here.
+None at the repo level — this is a leaf library. When consumed as a submodule in `zephyrex`, the parent's `tsconfig.json` declares `zod2gql` → `./src/lib/zod2gql/src`. Don't add aliases here.
 
 ---
 
