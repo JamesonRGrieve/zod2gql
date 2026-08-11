@@ -1,37 +1,34 @@
-# Claude Code Instructions — zod2gql
+# Claude Code Instructions — @zephyrex/zod2gql
 
-This is a **TypeScript translator library** that converts Zod schemas to GraphQL schemas. Consumed by `zephyrex` and other downstream apps as a submodule. Workspace-level TS/JS standards (Direction, Casting, Ratchets, ESLint, TS, Test, Pre-commit, Hard Rules) live in `../CLAUDE.md` §7 and apply here. This file documents the rules **specific** to this repo.
+TypeScript library that converts Zod schemas to GraphQL queries, mutations, and subscriptions. Consumed by `@zephyrex/auth` and `zephyrex` (client framework).
 
-Package manager: **pnpm** (exclusive). Toolchain: TypeScript + ESLint + Prettier + Vitest. (Storybook config exists for parity with sibling repos but the package itself has no UI.)
+## Stack Standards
 
----
+Read **before your first edit**:
 
-## State
-
-At workspace grade as of the last ratchet pass:
-
-- `strict: true`, `strictNullChecks: true`, `allowJs: false`, `target: ES2020` — strict-clean.
-- Lint, typecheck, symmetry, and js-coverage ratchets all green at zero.
-- Vitest in place; `src/index.test.ts` exhaustively covers `pluralize`, `getOperationFieldName`, variable / argument formatting, `processFields` (scalar, nested object, optional/nullable, array-of-object, array-of-scalar, maxDepth), the `schema.toGQL` router for query / mutation / subscription, and the `processArray*` family.
-
-Outstanding nice-to-haves (not blocking):
-
-- Add table-driven tests for less-common Zod combinators: `z.union`, `z.discriminatedUnion`, `z.record`, `z.tuple`, `z.lazy` (recursive), `z.intersection`, `z.literal`. Some of these the translator currently doesn't handle gracefully — those are real bugs that need fixing along with the tests.
-- Consider tightening the `(schema._def as { typeName?: string })` cast in `fieldNameFromObject` once Zod ships a public way to access typeName.
+- `/home/jameson/Source/ai-prompts/typescript.md`
 
 ---
 
-## Repo-Specific Direction (in addition to workspace §7.1)
+## Architecture
 
-- **The translator is pure**: input → output, no globals, no I/O. All branches must be unit-testable. Resist any urge to import runtime context (Apollo client, Next request, etc.) into the translator core.
-- **Coverage of every Zod type variant matters more than total LOC coverage.** A bug in `z.optional(z.union([...]))` handling that a single edge case test would have caught will silently break every consumer. Prefer table-driven tests that exhaustively iterate Zod combinator combinations.
-- **Casting policy is strict** (workspace §7.2): `as Record<string, any>` casts in a translator that's meant to produce a precisely-typed GraphQL schema would be self-defeating. Use Zod's own narrowed types (`z.ZodTypeAny` only at the entry, narrowed to specific `z.ZodType<…>` at every branch).
+Pure TypeScript, no React dependency. 5 source files:
 
----
+- `core.ts` — `GQLType` enum, `processFields`, variable formatting, field name extraction
+- `query.ts` — `createQuery`, `processQuery`
+- `mutation.ts` — `createMutation`, `processMutation`
+- `subscription.ts` — `createSubscription`, `processSubscription`
+- `index.ts` — barrel export + prototype extension (`z.ZodObject.prototype.toGQL`)
 
-## Path Aliases
+### Usage
 
-None at the repo level — this is a leaf library. When consumed as a submodule in `zephyrex`, the parent's `tsconfig.json` declares `zod2gql` → `./src/lib/zod2gql/src`. Don't add aliases here.
+```typescript
+import '@zephyrex/zod2gql';
+import { z } from 'zod';
+
+const UserSchema = z.object({ id: z.string(), email: z.string(), name: z.string() });
+const query = UserSchema.toGQL('query', { operationName: 'GetUser' });
+```
 
 ---
 
@@ -39,40 +36,15 @@ None at the repo level — this is a leaf library. When consumed as a submodule 
 
 ```bash
 pnpm install
-pnpm run lint / pnpm run lint:fix
-pnpm run format / pnpm run format:fix
-pnpm run typecheck                     # tsc --noEmit
-pnpm run test / pnpm run test:watch
-pnpm run compile                       # tsc → dist/
-
-# Ratchets
-pnpm run lint:ratchet[:update]
-pnpm run typecheck:ratchet[:update]
-pnpm run symmetry:ratchet[:update]
-pnpm run js-coverage:ratchet[:update]
-
-pnpm run check                         # all four ratchets + format
+pnpm compile          # Build to dist/
+pnpm test             # Vitest (5 test files)
+pnpm check            # All ratchets
 ```
 
----
+## Status
 
-## Ratchet Re-seed Required
+Strict-clean (`strict: true`, `allowJs: false`). All ratchets green. Currently on Zod 3 — needs porting to Zod 4 to match sibling packages.
 
-The ESLint flat config was hardened to foundry parity (workspace `../CLAUDE.md` §7.5):
-new warn-level rules were added (`@typescript-eslint/naming-convention`,
-`@typescript-eslint/no-use-before-define`, `@typescript-eslint/no-unused-expressions`,
-`@typescript-eslint/no-implied-eval`, the `eslint-comments` / `promise` recommended
-sets, a stricter `no-shadow`, a 4th `no-restricted-syntax` selector, and the `@vitest`
-test-file rules).
+## License
 
-After `pnpm install`, the ESLint warning baseline **must be re-seeded** because these
-new warn-level rules will surface previously-uncounted warnings. Run:
-
-```bash
-pnpm lint:ratchet:update
-```
-
-and commit the updated `.eslint-warning-baseline` **in the same commit** that lands
-this config change (per workspace `../CLAUDE.md` §7.3 — a ratchet baseline bump rides
-the commit that changes the metric). Do not bypass the pre-commit hook with
-`--no-verify`.
+AGPL-3.0-or-later. SPDX header on every source file.
