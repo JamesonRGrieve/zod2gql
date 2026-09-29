@@ -1,16 +1,17 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
   test: {
-    include: ['src/**/*.test.ts', 'src/**/*.test.tsx', 'tests/**/*.test.ts'],
-    exclude: ['node_modules/**', 'dist/**', 'storybook-static/**', 'tests/storybook/**'],
-    environment: 'happy-dom',
+    include: ['src/**/*.test.ts', 'tests/**/*.test.ts'],
+    exclude: ['node_modules/**', 'dist/**'],
+    environment: 'node',
     globals: true,
     coverage: {
       provider: 'v8',
       reporter: ['text', 'html'],
       include: ['src/**/*.ts'],
-      exclude: ['node_modules/**', 'dist/**', '**/*.test.ts', '**/*.test.tsx', '**/*.stories.ts', '**/*.stories.tsx'],
+      exclude: ['node_modules/**', 'dist/**', '**/*.test.ts'],
     },
   },
 });

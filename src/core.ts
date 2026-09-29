@@ -12,12 +12,7 @@ export enum GQLType {
 // raw runtime values to infer GraphQL scalar/input types; this is the narrow
 // type they are validated to at the public boundary (in place of `unknown`).
 export type GraphQLVariableValue =
-  | string
-  | number
-  | boolean
-  | null
-  | GraphQLVariableValue[]
-  | { [key: string]: GraphQLVariableValue };
+  string | number | boolean | null | GraphQLVariableValue[] | { [key: string]: GraphQLVariableValue };
 
 // Define interface for toGQL options
 export interface ToGQLOptions {
