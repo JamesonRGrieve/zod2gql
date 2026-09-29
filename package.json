@@ -49,13 +49,14 @@
     "biome:ratchet": "node scripts/biome-ratchet.mjs",
     "biome:ratchet:update": "node scripts/biome-ratchet.mjs --update",
     "size-limit": "size-limit",
-    "compile": "rm -rf ./dist tsconfig.compile.tsbuildinfo && tsc -p tsconfig.compile.json",
+    "compile": "rm -rf ./dist tsconfig.compile.tsbuildinfo && tsc -p tsconfig.compile.json && tsc-alias -p tsconfig.compile.json --resolve-full-paths",
+    "verify:dist": "node scripts/verify-dist.mjs",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
     "prepack": "pnpm compile",
     "precommit": "pnpm check",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm lint:ratchet && pnpm format && pnpm typecheck:ratchet && pnpm symmetry:ratchet && pnpm js-coverage:ratchet && pnpm knip:ratchet && pnpm deps:ratchet && pnpm type-coverage:ratchet && pnpm strict:ratchet && pnpm test:typecheck:ratchet && pnpm lockfile:validate && pnpm test && pnpm biome:ratchet && pnpm compile && pnpm size-limit"
+    "check": "pnpm lint:ratchet && pnpm format && pnpm typecheck:ratchet && pnpm symmetry:ratchet && pnpm js-coverage:ratchet && pnpm knip:ratchet && pnpm deps:ratchet && pnpm type-coverage:ratchet && pnpm strict:ratchet && pnpm test:typecheck:ratchet && pnpm lockfile:validate && pnpm test && pnpm biome:ratchet && pnpm compile && pnpm verify:dist && pnpm size-limit"
   },
   "repository": {
     "type": "git",
@@ -100,6 +101,7 @@
     "knip": "^6.38.0",
     "prettier": "^3.9.9",
     "size-limit": "^14.1.0",
+    "tsc-alias": "^1.9.5",
     "type-coverage": "^2.30.1",
     "typescript": "^6.0.3",
     "vitest": "^5.0.2",
