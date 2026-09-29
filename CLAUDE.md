@@ -1,4 +1,4 @@
-# Claude Code Instructions — @zephyrex/zod2gql
+# Claude Code Instructions — zod2gql
 
 TypeScript library that converts Zod schemas to GraphQL queries, mutations, and subscriptions. Consumed by `@zephyrex/auth` and `zephyrex` (client framework).
 
@@ -24,7 +24,7 @@ Pure TypeScript, no React dependency. 5 source files:
 
 ```typescript
 import { z } from 'zod';
-import { GQLType, toGQL } from '@zephyrex/zod2gql';
+import { GQLType, toGQL } from 'zod2gql';
 
 const UserSchema = z.object({ id: z.string(), email: z.string(), name: z.string() }).describe('User');
 const query = toGQL(UserSchema, GQLType.Query, { operationName: 'GetUser' });

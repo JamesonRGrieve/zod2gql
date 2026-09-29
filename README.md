@@ -1,4 +1,4 @@
-# @zephyrex/zod2gql
+# zod2gql
 
 Generate GraphQL query, mutation and subscription documents from Zod 4 schemas.
 
@@ -7,7 +7,7 @@ The schema's shape becomes the selection set, nested objects and arrays of objec
 ## Install
 
 ```bash
-pnpm add @zephyrex/zod2gql zod
+pnpm add zod2gql zod
 ```
 
 `zod` (`^4`) is a peer dependency, so the schemas you pass in are built with your own copy.
@@ -16,7 +16,7 @@ pnpm add @zephyrex/zod2gql zod
 
 ```ts
 import { z } from 'zod';
-import { GQLType, toGQL } from '@zephyrex/zod2gql';
+import { GQLType, toGQL } from 'zod2gql';
 
 const User = z
   .object({

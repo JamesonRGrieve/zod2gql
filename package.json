@@ -1,6 +1,6 @@
 {
-  "name": "@zephyrex/zod2gql",
-  "version": "1.0.0-alpha.1",
+  "name": "zod2gql",
+  "version": "0.1.0-alpha.1",
   "description": "Convert Zod schemas to GraphQL queries.",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -51,6 +51,7 @@
     "size-limit": "size-limit",
     "compile": "rm -rf ./dist tsconfig.compile.tsbuildinfo && tsc -p tsconfig.compile.json",
     "prepare": "git config core.hooksPath .githooks 2>/dev/null || true",
+    "prepack": "pnpm compile",
     "precommit": "pnpm check",
     "test": "vitest run",
     "test:watch": "vitest",
