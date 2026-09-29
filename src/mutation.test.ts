@@ -2,8 +2,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { createMutation, processMutation } from './mutation';
-// Side-effect import: registers ZodObject.prototype.toGQL used by createMutation.
-import './index';
 
 describe('processMutation', () => {
   it('produces a bare mutation with no name / no variables', () => {
@@ -65,7 +63,7 @@ describe('processMutation', () => {
 });
 
 describe('createMutation', () => {
-  it('delegates to schema.toGQL with mutation queryType', () => {
+  it('renders exactly what processMutation renders', () => {
     const schema = z.object({ id: z.string() }).describe('Post');
     const direct = processMutation(schema, { operationName: 'CreatePost' });
     const helper = createMutation(schema, { operationName: 'CreatePost' });

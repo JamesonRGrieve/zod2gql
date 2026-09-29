@@ -53,28 +53,33 @@ const fieldNameFromOperation = (operationName: string): string => {
   return lowercaseFirst(stripped);
 };
 
-const fieldNameFromObject = (schema: z.AnyZodObject): string => {
-  if (schema.description !== undefined && schema.description !== '') {
-    return lowercaseFirst(schema.description);
+/** Any zod schema, classic or core; the translator only inspects structure. */
+export type AnySchema = z.core.$ZodType;
+/** Any object schema; its shape values are schemas (zod's default shape is a loose `any` record). */
+export type AnyObjectSchema = z.ZodObject<z.core.$ZodShape>;
+
+const fieldNameFromObject = (schema: AnyObjectSchema): string =>
+  schema.description !== undefined && schema.description !== '' ? lowercaseFirst(schema.description) : '';
+
+const isZodArray = (schema: AnySchema): schema is z.ZodArray => schema instanceof z.ZodArray;
+export const isZodObject = (schema: AnySchema): schema is AnyObjectSchema => schema instanceof z.ZodObject;
+
+/** Strip every optional/nullable layer so `.nullable().optional()` still exposes its object shape. */
+const unwrapOptionality = (schema: AnySchema): AnySchema => {
+  let current = schema;
+  while (current instanceof z.ZodOptional || current instanceof z.ZodNullable) {
+    current = current.unwrap();
   }
-  const typeName: string = schema._def.typeName;
-  if (typeName !== '' && typeName !== 'ZodObject') {
-    return lowercaseFirst(typeName);
-  }
-  return '';
+  return current;
 };
 
-const isZodArray = (schema: z.ZodTypeAny): schema is z.ZodArray<z.ZodTypeAny> => schema instanceof z.ZodArray;
-export const isZodObject = (schema: z.ZodTypeAny): schema is z.AnyZodObject => schema instanceof z.ZodObject;
-
-export const getOperationFieldName = (schema: z.ZodTypeAny, operationName?: string, isArrayHint = false): string => {
+export const getOperationFieldName = (schema: AnySchema, operationName?: string, isArrayHint = false): string => {
   if (operationName !== undefined && operationName !== '') {
     return fieldNameFromOperation(operationName);
   }
   if (isZodArray(schema)) {
-    const elementSchema: z.ZodTypeAny = schema._def.type;
-    if (isZodObject(elementSchema)) {
-      return pluralize(getOperationFieldName(elementSchema));
+    if (isZodObject(schema.element)) {
+      return pluralize(getOperationFieldName(schema.element));
     }
     return '';
   }
@@ -139,24 +144,20 @@ export const formatFieldArguments = (variables?: Record<string, GraphQLVariableV
 };
 
 const renderField = (
-  fieldSchema: z.ZodTypeAny,
+  fieldSchema: AnySchema,
   fieldName: string,
   queryType: GQLType,
   options: ToGQLOptions,
   depth: number,
   indent: string,
 ): string => {
-  const unwrappedSchema: z.ZodTypeAny =
-    fieldSchema instanceof z.ZodOptional || fieldSchema instanceof z.ZodNullable
-      ? // type-coverage:ignore-next-line - Zod's ZodOptional/ZodNullable._def.innerType is typed as ZodTypeAny (any-leaking generics) at the library boundary
-        (fieldSchema._def.innerType as z.ZodTypeAny)
-      : fieldSchema;
+  const unwrappedSchema = unwrapOptionality(fieldSchema);
 
   if (isZodObject(unwrappedSchema)) {
     return `${indent}${fieldName} {\n${processFields(unwrappedSchema, queryType, options, depth + 1)}${indent}}\n`;
   }
   if (isZodArray(unwrappedSchema)) {
-    const elementType: z.ZodTypeAny = unwrappedSchema._def.type;
+    const elementType = unwrapOptionality(unwrappedSchema.element);
     if (isZodObject(elementType)) {
       return `${indent}${fieldName} {\n${processFields(elementType, queryType, options, depth + 1)}${indent}}\n`;
     }
@@ -164,23 +165,20 @@ const renderField = (
   return `${indent}${fieldName}\n`;
 };
 
-export function processFields(schema: z.AnyZodObject, queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string {
-  const { maxDepth = 10 } = options;
+const DEFAULT_MAX_DEPTH = 10;
+
+export function processFields(schema: AnyObjectSchema, queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string {
+  const { maxDepth = DEFAULT_MAX_DEPTH } = options;
 
   if (depth > maxDepth) {
     return '';
   }
 
   const indent = '  '.repeat(depth);
-  const shape = schema._def.shape() as Record<string, unknown>;
   let query = '';
 
-  for (const [key, value] of Object.entries(shape)) {
-    if (value instanceof z.ZodType) {
-      query += renderField(value as z.ZodTypeAny, key, queryType, options, depth, indent);
-    } else {
-      query += `${indent}${key}\n`;
-    }
+  for (const [key, value] of Object.entries(schema.shape)) {
+    query += renderField(value, key, queryType, options, depth, indent);
   }
 
   return query;
@@ -188,9 +186,9 @@ export function processFields(schema: z.AnyZodObject, queryType: GQLType, option
 
 const ARRAY_ELEMENT_NOT_OBJECT_ERROR = 'Array element must be a ZodObject';
 
-const processArrayOperation = (schema: z.ZodArray<z.ZodTypeAny>, queryType: GQLType, options: ToGQLOptions): string => {
+const processArrayOperation = (schema: z.ZodArray, queryType: GQLType, options: ToGQLOptions): string => {
   const { operationName, variables } = options;
-  const elementSchema: z.ZodTypeAny = schema._def.type;
+  const elementSchema = schema.element;
   if (!isZodObject(elementSchema)) {
     throw new Error(ARRAY_ELEMENT_NOT_OBJECT_ERROR);
   }
@@ -202,14 +200,14 @@ const processArrayOperation = (schema: z.ZodArray<z.ZodTypeAny>, queryType: GQLT
 };
 
 // Process array operations
-export function processArrayQuery(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
+export function processArrayQuery(schema: z.ZodArray, options: ToGQLOptions = {}): string {
   return processArrayOperation(schema, GQLType.Query, options);
 }
 
-export function processArrayMutation(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
+export function processArrayMutation(schema: z.ZodArray, options: ToGQLOptions = {}): string {
   return processArrayOperation(schema, GQLType.Mutation, options);
 }
 
-export function processArraySubscription(schema: z.ZodArray<z.ZodTypeAny>, options: ToGQLOptions = {}): string {
+export function processArraySubscription(schema: z.ZodArray, options: ToGQLOptions = {}): string {
   return processArrayOperation(schema, GQLType.Subscription, options);
 }

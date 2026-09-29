@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import type { z } from 'zod';
 import {
+  type AnyObjectSchema,
   GQLType,
   type ToGQLOptions,
   formatFieldArguments,
@@ -10,7 +10,7 @@ import {
 } from './core';
 
 // Process query operations
-export function processQuery(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
+export function processQuery(schema: AnyObjectSchema, options: ToGQLOptions = {}): string {
   const { operationName, variables } = options;
   const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
   const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
@@ -21,6 +21,6 @@ export function processQuery(schema: z.AnyZodObject, options: ToGQLOptions = {})
 }
 
 // Helper function to directly generate a query from a Zod schema
-export function createQuery(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
-  return schema.toGQL(GQLType.Query, options);
+export function createQuery(schema: AnyObjectSchema, options: ToGQLOptions = {}): string {
+  return processQuery(schema, options);
 }

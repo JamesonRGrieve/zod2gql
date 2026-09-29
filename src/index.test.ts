@@ -11,6 +11,7 @@ import {
   processArrayQuery,
   processArraySubscription,
   processFields,
+  toGQL,
 } from './index';
 
 describe('pluralize', () => {
@@ -149,16 +150,37 @@ describe('processFields', () => {
   });
 });
 
-describe('schema.toGQL routing', () => {
-  it('routes ZodObject query', () => {
+describe('toGQL routing', () => {
+  it('routes ZodObject query by default', () => {
     const schema = z.object({ id: z.string() }).describe('User');
-    const q = schema.toGQL(GQLType.Query);
+    const q = toGQL(schema);
     expect(q).toMatch(/^query {\n {2}user {\n {4}id\n {2}}\n}$/);
+  });
+
+  it('routes ZodArray to the pluralised array operation', () => {
+    const schema = z.array(z.object({ id: z.string() }).describe('User'));
+    expect(toGQL(schema, GQLType.Query)).toBe(processArrayQuery(schema));
+    expect(toGQL(schema, GQLType.Mutation)).toBe(processArrayMutation(schema));
+    expect(toGQL(schema, GQLType.Subscription)).toBe(processArraySubscription(schema));
+  });
+
+  it('rejects an array whose element is not an object', () => {
+    expect(() => toGQL(z.array(z.string()))).toThrow('Array element must be a ZodObject for toGQL');
+  });
+
+  it('leaves zod untouched (no prototype patching)', () => {
+    expect('toGQL' in z.object({})).toBe(false);
+    expect('toGQL' in z.array(z.object({}))).toBe(false);
+  });
+
+  it('selects sub-fields through nullable().optional() wrappers', () => {
+    const schema = z.object({ team: z.object({ id: z.string() }).nullable().optional() }).describe('User');
+    expect(toGQL(schema)).toContain('team {\n      id\n    }');
   });
 
   it('routes ZodObject mutation with variables and inputTypeMap', () => {
     const schema = z.object({ id: z.string() }).describe('User');
-    const q = schema.toGQL(GQLType.Mutation, {
+    const q = toGQL(schema, GQLType.Mutation, {
       operationName: 'CreateUser',
       variables: { input: { name: 'a' } },
       inputTypeMap: { input: 'CreateUserInput' },
@@ -169,7 +191,7 @@ describe('schema.toGQL routing', () => {
 
   it('routes ZodObject subscription', () => {
     const schema = z.object({ id: z.string() }).describe('Notification');
-    const q = schema.toGQL(GQLType.Subscription);
+    const q = toGQL(schema, GQLType.Subscription);
     expect(q).toContain('subscription');
     expect(q).toContain('notification');
   });

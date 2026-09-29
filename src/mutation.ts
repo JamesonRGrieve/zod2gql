@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
-import type { z } from 'zod';
 import {
+  type AnyObjectSchema,
   GQLType,
   type GraphQLVariableValue,
   type ToGQLOptions,
@@ -10,7 +10,7 @@ import {
 } from './core';
 
 // Process mutation operations
-export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
+export function processMutation(schema: AnyObjectSchema, options: ToGQLOptions = {}): string {
   const { operationName, variables, inputTypeMap } = options;
 
   const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
@@ -58,6 +58,6 @@ export function processMutation(schema: z.AnyZodObject, options: ToGQLOptions = 
 }
 
 // Helper function to directly generate a mutation from a Zod schema
-export function createMutation(schema: z.AnyZodObject, options: ToGQLOptions = {}): string {
-  return schema.toGQL(GQLType.Mutation, options);
+export function createMutation(schema: AnyObjectSchema, options: ToGQLOptions = {}): string {
+  return processMutation(schema, options);
 }

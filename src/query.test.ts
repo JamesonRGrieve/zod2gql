@@ -2,7 +2,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { createQuery, processQuery } from './query';
-import './index';
 
 describe('processQuery', () => {
   it('produces a bare query', () => {
@@ -52,7 +51,7 @@ describe('processQuery', () => {
 });
 
 describe('createQuery', () => {
-  it('delegates to schema.toGQL with query queryType', () => {
+  it('renders exactly what processQuery renders', () => {
     const schema = z.object({ id: z.string() }).describe('User');
     const direct = processQuery(schema, { operationName: 'GetUser' });
     const helper = createQuery(schema, { operationName: 'GetUser' });

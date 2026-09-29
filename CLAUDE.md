@@ -18,16 +18,16 @@ Pure TypeScript, no React dependency. 5 source files:
 - `query.ts` — `createQuery`, `processQuery`
 - `mutation.ts` — `createMutation`, `processMutation`
 - `subscription.ts` — `createSubscription`, `processSubscription`
-- `index.ts` — barrel export + prototype extension (`z.ZodObject.prototype.toGQL`)
+- `index.ts` — barrel export + `toGQL(schema, type, options)` router (zod is never patched; `zod@^4` is a peer)
 
 ### Usage
 
 ```typescript
-import '@zephyrex/zod2gql';
 import { z } from 'zod';
+import { GQLType, toGQL } from '@zephyrex/zod2gql';
 
-const UserSchema = z.object({ id: z.string(), email: z.string(), name: z.string() });
-const query = UserSchema.toGQL('query', { operationName: 'GetUser' });
+const UserSchema = z.object({ id: z.string(), email: z.string(), name: z.string() }).describe('User');
+const query = toGQL(UserSchema, GQLType.Query, { operationName: 'GetUser' });
 ```
 
 ---
@@ -43,7 +43,7 @@ pnpm check            # All ratchets
 
 ## Status
 
-Strict-clean (`strict: true`, `allowJs: false`). All ratchets green. Currently on Zod 3 — needs porting to Zod 4 to match sibling packages.
+Strict-clean (`strict: true`, `allowJs: false`). All ratchets green. Targets Zod 4, shared with the sibling packages as a peer dependency.
 
 ## License
 

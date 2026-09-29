@@ -2,7 +2,6 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import { createSubscription, processSubscription } from './subscription';
-import './index';
 
 describe('processSubscription', () => {
   it('produces a bare subscription', () => {
@@ -51,7 +50,7 @@ describe('processSubscription', () => {
 });
 
 describe('createSubscription', () => {
-  it('delegates to schema.toGQL with subscription queryType', () => {
+  it('renders exactly what processSubscription renders', () => {
     const schema = z.object({ id: z.string() }).describe('Event');
     const direct = processSubscription(schema, { operationName: 'SubscribeEvent' });
     const helper = createSubscription(schema, { operationName: 'SubscribeEvent' });
