@@ -12,13 +12,17 @@ Read **before your first edit**:
 
 ## Architecture
 
-Pure TypeScript, no React dependency. 5 source files:
+Pure TypeScript, no React dependency. 7 source files:
 
-- `core.ts` — `GQLType` enum, `processFields`, variable formatting, field name extraction
+- `core.ts` — `GQLType` enum, options, variable-type inference, field name extraction, `renderOperation` (the one operation renderer every entry point uses), `processFields`
+- `selection.ts` — `renderSelectionSet`: classifies each field schema through zod's core constructors (leaf / object / union fragments), looks through wrappers, detects cycles, enforces `maxDepth`
+- `errors.ts` — `GQLSchemaError` (carries the field `path`) and GraphQL `Name` validation
 - `query.ts` — `createQuery`, `processQuery`
 - `mutation.ts` — `createMutation`, `processMutation`
 - `subscription.ts` — `createSubscription`, `processSubscription`
 - `index.ts` — barrel export + `toGQL(schema, type, options)` router (zod is never patched; `zod@^4` is a peer)
+
+A schema that cannot become a valid document throws `GQLSchemaError`; nothing is silently dropped. The README's "How Zod types map" table is the contract for each zod type.
 
 ### Usage
 
@@ -37,7 +41,7 @@ const query = toGQL(UserSchema, GQLType.Query, { operationName: 'GetUser' });
 ```bash
 pnpm install
 pnpm compile          # Build to dist/
-pnpm test             # Vitest (5 test files)
+pnpm test             # Vitest (one test file per source file)
 pnpm check            # All ratchets
 ```
 

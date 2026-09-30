@@ -246,6 +246,41 @@ describe('toGQL name validation', () => {
   });
 });
 
+describe('toGQL invalid schemas', () => {
+  it('rejects an empty object schema instead of rendering an empty selection', () => {
+    expect(() => toGQL(z.object({}).describe('User'))).toThrow(
+      'zod2gql: user: object has no fields, and a GraphQL selection set cannot be empty',
+    );
+    expect(() => toGQL(z.array(z.object({}).describe('User')))).toThrow('zod2gql: users: object has no fields');
+  });
+
+  it('rejects a recursive schema with a path from the root field', () => {
+    const CommentSchema = z
+      .object({
+        body: z.string(),
+        get replies() {
+          return z.array(CommentSchema);
+        },
+      })
+      .describe('Comment');
+    expect(() => toGQL(CommentSchema, GQLType.Subscription)).toThrow(
+      'zod2gql: comment.replies: circular reference: this object schema is already selected at comment',
+    );
+  });
+
+  it('rejects an unsupported field type with a path from the root field', () => {
+    expect(() => toGQL(z.object({ id: z.string(), callback: z.symbol() }).describe('User'), GQLType.Mutation)).toThrow(
+      'zod2gql: user.callback: zod type "symbol" has no GraphQL representation',
+    );
+  });
+
+  it('counts maxDepth from the root field, not from the indentation', () => {
+    const schema = z.object({ team: z.object({ id: z.string() }) }).describe('User');
+    expect(toGQL(schema, GQLType.Query, { maxDepth: 1 })).toBe('query {\n  user {\n    team {\n      id\n    }\n  }\n}');
+    expect(() => toGQL(schema, GQLType.Query, { maxDepth: 0 })).toThrow('zod2gql: user.team: selection nests deeper');
+  });
+});
+
 describe('processArray*', () => {
   it('renders array query with pluralised field name', () => {
     const schema = z.array(z.object({ id: z.string() }).describe('User'));
