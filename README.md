@@ -65,7 +65,7 @@ toGQL(z.array(User)); // query { users { ... } }
 | `operationName` | Names the operation; a `Get`/`Create`/`Update`/`Delete`/`Subscribe` prefix is stripped to form the field name. |
 | `variables`     | Declares `$name` variables (types inferred from the values) and passes them as field arguments.                |
 | `inputTypeMap`  | Overrides an inferred variable type, e.g. `{ input: 'CreateUserInput' }`.                                      |
-| `maxDepth`      | Stops descending into nested objects past this depth (default 10).                                             |
+| `maxDepth`      | How many selection sets may nest below the root field's (default 10). A deeper object throws.                  |
 
 Optional and nullable wrappers are looked through, so `z.object({...}).nullable().optional()` still yields a sub-selection.
 
@@ -74,6 +74,12 @@ Optional and nullable wrappers are looked through, so `z.object({...}).nullable(
 A schema that cannot become a valid GraphQL document throws a `GQLSchemaError` instead of rendering broken output. Its message and its `path` property name the field where rendering stopped, starting from the operation's root field (`user.team.display-name`).
 
 Field names, variable names, the operation name and the root field name must be GraphQL names, matching `/^[_A-Za-z][_0-9A-Za-z]*$/`: no hyphens, spaces, leading digits or non-ASCII letters. GraphQL has no reserved words, so fields called `query`, `type`, `on` or `fragment` are fine. The root field comes from `operationName` or from the schema's `.describe()` name; if neither gives one, rendering throws.
+
+Rendering also throws, rather than dropping fields, when:
+
+- an object sits deeper than `maxDepth`. Cutting it off would leave an empty `{}` selection or a missing field, so raise `maxDepth` or pass a shallower schema.
+- an object schema contains itself on the current path, through `z.lazy` or a getter in the shape. A selection set is finite, so a recursive type has to be queried through a non-recursive projection that stops at the depth you need. The same schema in sibling fields is fine.
+- an object has no fields, since GraphQL has no empty selection set.
 
 ## License
 

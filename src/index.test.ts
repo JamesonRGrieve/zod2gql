@@ -142,12 +142,17 @@ describe('processFields', () => {
     expect(out).toBe('ids\n');
   });
 
-  it('respects maxDepth', () => {
+  it('renders nesting up to maxDepth', () => {
+    const schema = z.object({ a: z.object({ b: z.object({ x: z.string() }) }) });
+    expect(processFields(schema, GQLType.Query, { maxDepth: 2 })).toBe('a {\n  b {\n    x\n  }\n}\n');
+  });
+
+  it('throws at the first object past maxDepth rather than dropping its fields', () => {
     const inner = z.object({ x: z.string() });
     const schema = z.object({ a: z.object({ b: z.object({ c: inner }) }) });
-    const out = processFields(schema, GQLType.Query, { maxDepth: 1 });
-    expect(out).toContain('a {');
-    expect(out).not.toContain('c {');
+    expect(() => processFields(schema, GQLType.Query, { maxDepth: 1 })).toThrow(
+      'zod2gql: a.b: selection nests deeper than maxDepth (1); raise maxDepth or select fewer levels',
+    );
   });
 });
 

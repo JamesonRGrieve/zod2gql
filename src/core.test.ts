@@ -111,9 +111,16 @@ describe('core: processFields', () => {
     expect(processFields(schema, GQLType.Query)).toBe('user {\n  id\n}\n');
   });
 
-  it('respects maxDepth=0 by returning empty for any depth', () => {
+  it('treats depth as indentation only, so maxDepth=0 still renders scalar fields', () => {
     const schema = z.object({ id: z.string() });
-    expect(processFields(schema, GQLType.Query, { maxDepth: 0 }, 1)).toBe('');
+    expect(processFields(schema, GQLType.Query, { maxDepth: 0 }, 1)).toBe('  id\n');
+  });
+
+  it('throws instead of emitting an empty selection when an object is past maxDepth', () => {
+    const schema = z.object({ user: z.object({ id: z.string() }) });
+    expect(() => processFields(schema, GQLType.Query, { maxDepth: 0 })).toThrow(
+      'zod2gql: user: selection nests deeper than maxDepth (0)',
+    );
   });
 });
 

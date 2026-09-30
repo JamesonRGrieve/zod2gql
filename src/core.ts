@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { z } from 'zod';
 import { GQLSchemaError, assertGraphQLName } from './errors';
+import { renderSelectionSet } from './selection';
 
 // Define an enum for GraphQL operation types
 export enum GQLType {
@@ -19,6 +20,7 @@ export type GraphQLVariableValue =
 export interface ToGQLOptions {
   operationName?: string;
   variables?: Record<string, GraphQLVariableValue>;
+  /** Selection sets allowed to nest below the root field's (default 10); a deeper object throws GQLSchemaError. */
   maxDepth?: number;
   inputTypeMap?: Record<string, string>;
 }
@@ -64,15 +66,6 @@ const fieldNameFromObject = (schema: AnyObjectSchema): string =>
 
 const isZodArray = (schema: AnySchema): schema is z.ZodArray => schema instanceof z.ZodArray;
 export const isZodObject = (schema: AnySchema): schema is AnyObjectSchema => schema instanceof z.ZodObject;
-
-/** Strip every optional/nullable layer so `.nullable().optional()` still exposes its object shape. */
-const unwrapOptionality = (schema: AnySchema): AnySchema => {
-  let current = schema;
-  while (current instanceof z.ZodOptional || current instanceof z.ZodNullable) {
-    current = current.unwrap();
-  }
-  return current;
-};
 
 export const getOperationFieldName = (schema: AnySchema, operationName?: string, isArrayHint = false): string => {
   if (operationName !== undefined && operationName !== '') {
@@ -153,51 +146,9 @@ export const formatFieldArguments = (variables?: Record<string, GraphQLVariableV
     .join(', ')})`;
 };
 
-const DEFAULT_MAX_DEPTH = 10;
-
-function renderFields(schema: AnyObjectSchema, options: ToGQLOptions, depth: number, path: readonly string[]): string {
-  const { maxDepth = DEFAULT_MAX_DEPTH } = options;
-
-  if (depth > maxDepth) {
-    return '';
-  }
-
-  const indent = '  '.repeat(depth);
-  let query = '';
-
-  for (const [key, value] of Object.entries(schema.shape)) {
-    query += renderField(value, key, options, depth, indent, [...path, key]);
-  }
-
-  return query;
-}
-
-function renderField(
-  fieldSchema: AnySchema,
-  fieldName: string,
-  options: ToGQLOptions,
-  depth: number,
-  indent: string,
-  path: readonly string[],
-): string {
-  assertGraphQLName(fieldName, 'field', path);
-  const unwrappedSchema = unwrapOptionality(fieldSchema);
-
-  if (isZodObject(unwrappedSchema)) {
-    return `${indent}${fieldName} {\n${renderFields(unwrappedSchema, options, depth + 1, path)}${indent}}\n`;
-  }
-  if (isZodArray(unwrappedSchema)) {
-    const elementType = unwrapOptionality(unwrappedSchema.element);
-    if (isZodObject(elementType)) {
-      return `${indent}${fieldName} {\n${renderFields(elementType, options, depth + 1, path)}${indent}}\n`;
-    }
-  }
-  return `${indent}${fieldName}\n`;
-}
-
 /** Render the selection set of `schema` at indent level `depth`. `queryType` does not change the selection. */
 export function processFields(schema: AnyObjectSchema, _queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string {
-  return renderFields(schema, options, depth, []);
+  return renderSelectionSet(schema, options.maxDepth, depth, []);
 }
 
 /** Indent level of the selection set under an operation's root field (`query { field { <here> } }`). */
@@ -230,7 +181,7 @@ export const renderOperation = (
     );
   }
   assertGraphQLName(fieldName, 'operation field', []);
-  const selection = renderFields(selectionSchema, options, OPERATION_SELECTION_INDENT, [fieldName]);
+  const selection = renderSelectionSet(selectionSchema, options.maxDepth, OPERATION_SELECTION_INDENT, [fieldName]);
   return `${queryType}${operation}${varsString} {\n  ${fieldName}${fieldArgs} {\n${selection}  }\n}`;
 };
 
