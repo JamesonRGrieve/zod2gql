@@ -270,7 +270,7 @@ const sharedRules = {
 
 export default [
   {
-    ignores: ['dist/', 'node_modules/', 'docs/', 'scripts/', '*.config.js', '*.config.mjs'],
+    ignores: ['dist/', 'dist.next/', 'dist.old/', 'node_modules/', 'docs/', 'scripts/', '*.config.js', '*.config.mjs'],
   },
   {
     files: ['src/**/*.ts', 'src/**/*.tsx'],

@@ -1,5 +1,7 @@
 pnpm-lock.yaml
 .symmetry-coverage.json
 dist/
+dist.next/
+dist.old/
 node_modules/
 *.tsbuildinfo
