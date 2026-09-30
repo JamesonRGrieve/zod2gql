@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /** dependency-cruiser config — forbid circular deps and orphans within src/. */
 module.exports = {
   forbidden: [

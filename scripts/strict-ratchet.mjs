@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+// SPDX-License-Identifier: AGPL-3.0-or-later
 /**
  * Strict-tsc ratchet. Runs `tsc --noEmit -p <config>` (default
  * tsconfig.strict.json — next-tier strictness flags on top of the main
