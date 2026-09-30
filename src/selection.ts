@@ -10,11 +10,21 @@ const DEFAULT_MAX_DEPTH = 10;
 
 const INDENT = '  ';
 
-/**
- * What a field contributes to a selection set: nothing below it, or the merged fields of one or more
- * object schemas (more than one when an intersection combines objects).
- */
-type FieldSelection = { readonly kind: 'leaf' } | { readonly kind: 'object'; readonly objects: readonly ObjectSchema[] };
+/** The merged fields of one or more object schemas (more than one when an intersection combines objects). */
+interface ObjectSelection {
+  readonly kind: 'object';
+  readonly objects: readonly ObjectSchema[];
+}
+
+/** One inline fragment of a union selection: `... on <typeName> { <fields of objects> }`. */
+interface UnionMember {
+  readonly typeName: string;
+  readonly objects: readonly ObjectSchema[];
+}
+
+/** What a field contributes to a selection set: nothing below it, an object's fields, or one fragment per union member. */
+type FieldSelection =
+  { readonly kind: 'leaf' } | ObjectSelection | { readonly kind: 'union'; readonly members: readonly UnionMember[] };
 
 const LEAF: FieldSelection = { kind: 'leaf' };
 
@@ -38,7 +48,6 @@ const LEAF_TYPES = [
   z.core.$ZodAny,
   z.core.$ZodUnknown,
   z.core.$ZodCustom,
-  z.core.$ZodUnion,
 ];
 
 const isLeafType = (schema: Schema): boolean => LEAF_TYPES.some((type) => schema instanceof type);
@@ -85,14 +94,80 @@ const combineSelections = (left: FieldSelection, right: FieldSelection, path: re
   if (left.kind === 'object' && right.kind === 'object') {
     return { kind: 'object', objects: [...left.objects, ...right.objects] };
   }
-  throw new GQLSchemaError(path, 'intersection combines an object with a non-object, which no selection can satisfy');
+  throw new GQLSchemaError(
+    path,
+    `intersection combines incompatible types (${left.kind} and ${right.kind}), which no selection can satisfy`,
+  );
+};
+
+const describedName = (schema: Schema | undefined): string | undefined => {
+  if (schema === undefined) {
+    return undefined;
+  }
+  const description = z.globalRegistry.get(schema)?.description;
+  return description === '' ? undefined : description;
+};
+
+/** A union member's GraphQL type name: the member's `.describe()` text, or that of its single object schema. */
+const memberTypeName = (option: Schema, selection: ObjectSelection, path: readonly string[]): string => {
+  const typeName =
+    describedName(option) ?? (selection.objects.length === 1 ? describedName(selection.objects.at(0)) : undefined);
+  if (typeName === undefined) {
+    throw new GQLSchemaError(
+      path,
+      "unions need a type name per member for their inline fragments; name each object member with .describe('TypeName')",
+    );
+  }
+  assertGraphQLName(typeName, 'union member type name', path);
+  return typeName;
+};
+
+/**
+ * Classify a union. `null`/`undefined` members only make it nullable. Scalar-only unions are selected by name,
+ * a single remaining member is selected as itself, and object members become `... on TypeName` fragments.
+ */
+const resolveUnion = (
+  options: readonly Schema[],
+  path: readonly string[],
+  visiting: ReadonlySet<Schema>,
+): FieldSelection => {
+  const present = options.filter((option) => !(option instanceof z.core.$ZodNull || option instanceof z.core.$ZodUndefined));
+  if (present.length === 0) {
+    throw new GQLSchemaError(path, 'union has no members besides null and undefined');
+  }
+  const resolved = present.map((option) => ({ option, selection: resolveField(option, path, visiting) }));
+  const onlyMember = resolved.length === 1 ? resolved.at(0) : undefined;
+  if (onlyMember !== undefined) {
+    return onlyMember.selection;
+  }
+  if (resolved.every(({ selection }) => selection.kind === 'leaf')) {
+    return LEAF;
+  }
+  const members: UnionMember[] = [];
+  for (const { option, selection } of resolved) {
+    if (selection.kind === 'leaf') {
+      throw new GQLSchemaError(path, 'union mixes objects with scalars; a GraphQL union holds only object types');
+    }
+    members.push(
+      ...(selection.kind === 'union'
+        ? selection.members
+        : [{ typeName: memberTypeName(option, selection, path), objects: selection.objects }]),
+    );
+  }
+  const duplicate = members.find((member, index) =>
+    members.some((other, otherIndex) => otherIndex < index && other.typeName === member.typeName),
+  );
+  if (duplicate !== undefined) {
+    throw new GQLSchemaError(path, `union has two members named ${duplicate.typeName}`);
+  }
+  return { kind: 'union', members };
 };
 
 /**
  * Classify a field schema. `visiting` holds the wrappers already passed through for this one field, so a
  * `z.lazy` that resolves back to itself without reaching an object is reported instead of recursing forever.
  */
-const resolveField = (schema: Schema, path: readonly string[], visiting: ReadonlySet<Schema>): FieldSelection => {
+function resolveField(schema: Schema, path: readonly string[], visiting: ReadonlySet<Schema>): FieldSelection {
   if (visiting.has(schema)) {
     throw new GQLSchemaError(path, 'circular reference: the schema resolves to itself without reaching an object');
   }
@@ -122,11 +197,14 @@ const resolveField = (schema: Schema, path: readonly string[], visiting: Readonl
     }
     throw new GQLSchemaError(path, 'a tuple containing objects has no GraphQL form; GraphQL lists hold one type');
   }
+  if (schema instanceof z.core.$ZodUnion) {
+    return resolveUnion(schema._zod.def.options, path, next);
+  }
   if (isLeafType(schema)) {
     return LEAF;
   }
   throw new GQLSchemaError(path, `zod type "${schema._zod.def.type}" has no GraphQL representation`);
-};
+}
 
 /** The fields of one or more object schemas, merged by name; a name declared twice has its selections combined. */
 const mergeFields = (objects: readonly ObjectSchema[], path: readonly string[]): Map<string, FieldSelection> => {
@@ -176,12 +254,31 @@ function renderObjects(
   const indent = INDENT.repeat(indentLevel);
   let rendered = '';
   for (const [name, selection] of fields) {
-    rendered +=
-      selection.kind === 'leaf'
-        ? `${indent}${name}\n`
-        : `${indent}${name} {\n${renderObjects(selection.objects, childContext, level + 1, indentLevel + 1, [...path, name])}${indent}}\n`;
+    rendered += `${indent}${name}${renderSubSelection(selection, childContext, level + 1, indentLevel, [...path, name])}\n`;
   }
   return rendered;
+}
+
+/** The ` { ... }` a field's selection needs (empty for a leaf), closed at the field's `indentLevel`. */
+function renderSubSelection(
+  selection: FieldSelection,
+  context: RenderContext,
+  level: number,
+  indentLevel: number,
+  path: readonly string[],
+): string {
+  if (selection.kind === 'leaf') {
+    return '';
+  }
+  const indent = INDENT.repeat(indentLevel);
+  if (selection.kind === 'object') {
+    return ` {\n${renderObjects(selection.objects, context, level, indentLevel + 1, path)}${indent}}`;
+  }
+  const fragments = selection.members.map(
+    ({ typeName, objects }) =>
+      `${indent}${INDENT}... on ${typeName} {\n${renderObjects(objects, context, level, indentLevel + 2, path)}${indent}${INDENT}}\n`,
+  );
+  return ` {\n${fragments.join('')}${indent}}`;
 }
 
 const resolveMaxDepth = (maxDepth: number | undefined): number => {

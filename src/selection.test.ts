@@ -117,7 +117,102 @@ describe('renderSelectionSet: unsupported types', () => {
 
   it('rejects an intersection of an object with a scalar', () => {
     expect(() => render(z.object({ odd: z.intersection(z.object({ id: z.string() }), z.string()) }))).toThrow(
-      'zod2gql: root.odd: intersection combines an object with a non-object',
+      'zod2gql: root.odd: intersection combines incompatible types (object and leaf)',
+    );
+  });
+});
+
+describe('renderSelectionSet: unions', () => {
+  const Cat = z.object({ kind: z.literal('cat'), meows: z.boolean() }).describe('Cat');
+  const Dog = z.object({ kind: z.literal('dog'), owner: z.object({ name: z.string() }) }).describe('Dog');
+  const catFragment = '  ... on Cat {\n    kind\n    meows\n  }\n';
+  const dogFragment = '  ... on Dog {\n    kind\n    owner {\n      name\n    }\n  }\n';
+
+  it('selects each object member through an inline fragment named by .describe()', () => {
+    expect(render(z.object({ pet: z.union([Cat, Dog]) }))).toBe(`pet {\n${catFragment}${dogFragment}}\n`);
+  });
+
+  it('does the same for a discriminated union, including inside arrays', () => {
+    const pets = z.array(z.discriminatedUnion('kind', [Cat, Dog]));
+    expect(render(z.object({ pets }))).toBe(`pets {\n${catFragment}${dogFragment}}\n`);
+  });
+
+  it('indents fragments relative to the field', () => {
+    expect(renderSelectionSet(z.object({ pet: z.union([Cat, Dog]) }), undefined, 1, [])).toBe(
+      `  pet {\n  ${catFragment.replaceAll('\n  ', '\n    ')}  ${dogFragment.replaceAll('\n  ', '\n    ')}  }\n`,
+    );
+  });
+
+  it('flattens nested unions', () => {
+    const Bird = z.object({ sings: z.boolean() }).describe('Bird');
+    expect(render(z.object({ pet: z.union([z.union([Cat, Dog]), Bird]) }))).toBe(
+      `pet {\n${catFragment}${dogFragment}  ... on Bird {\n    sings\n  }\n}\n`,
+    );
+  });
+
+  it('names a member from its described wrapper, or from the object inside an undescribed wrapper', () => {
+    const Anonymous = z.object({ id: z.string() });
+    const out = render(z.object({ node: z.union([Anonymous.readonly().describe('Alpha'), Cat.readonly()]) }));
+    expect(out).toBe(`node {\n  ... on Alpha {\n    id\n  }\n${catFragment}}\n`);
+  });
+
+  it('treats null and undefined members as nullability', () => {
+    expect(render(z.object({ pet: z.union([Cat, z.null()]) }))).toBe('pet {\n  kind\n  meows\n}\n');
+    expect(render(z.object({ pet: z.union([Cat, Dog, z.null(), z.undefined()]) }))).toBe(
+      `pet {\n${catFragment}${dogFragment}}\n`,
+    );
+  });
+
+  it('selects a scalar-only union by name, as before', () => {
+    expect(render(z.object({ id: z.union([z.string(), z.number()]) }))).toBe('id\n');
+  });
+
+  it('requires a type name for every object member', () => {
+    const Anonymous = z.object({ id: z.string() });
+    expect(() => render(z.object({ pet: z.union([Cat, Anonymous]) }))).toThrow(
+      "zod2gql: root.pet: unions need a type name per member for their inline fragments; name each object member with .describe('TypeName')",
+    );
+  });
+
+  it('rejects a member type name that is not a GraphQL name', () => {
+    const Bad = z.object({ id: z.string() }).describe('Big Dog');
+    expect(() => render(z.object({ pet: z.union([Cat, Bad]) }))).toThrow(
+      'union member type name "Big Dog" is not a valid GraphQL name',
+    );
+  });
+
+  it('rejects two members with the same type name', () => {
+    const OtherCat = z.object({ purrs: z.boolean() }).describe('Cat');
+    expect(() => render(z.object({ pet: z.union([Cat, OtherCat]) }))).toThrow('union has two members named Cat');
+  });
+
+  it('rejects a union mixing objects and scalars', () => {
+    expect(() => render(z.object({ pet: z.union([Cat, z.string()]) }))).toThrow(
+      'zod2gql: root.pet: union mixes objects with scalars',
+    );
+  });
+
+  it('rejects a union of nothing but null and undefined', () => {
+    expect(() => render(z.object({ nothing: z.union([z.null(), z.undefined()]) }))).toThrow(
+      'union has no members besides null and undefined',
+    );
+  });
+
+  it('applies cycle detection inside fragments', () => {
+    const Folder = z
+      .object({
+        name: z.string(),
+        get entries() {
+          return z.array(z.union([Folder, Cat]));
+        },
+      })
+      .describe('Folder');
+    expect(() => render(z.object({ root: Folder }))).toThrow('zod2gql: root.root.entries: circular reference');
+  });
+
+  it('counts fragment fields against maxDepth like any nested selection', () => {
+    expect(() => render(z.object({ pet: z.union([Cat, Dog]) }), 1)).toThrow(
+      'zod2gql: root.pet.owner: selection nests deeper than maxDepth (1)',
     );
   });
 });

@@ -76,11 +76,41 @@ Optional and nullable wrappers are looked through, so `z.object({...}).nullable(
 | `object`                                                                                                    | Sub-selection of its fields.                                                                    |
 | `array`, `set`                                                                                              | Whatever the element selects; lists need no extra syntax.                                       |
 | `intersection` of objects                                                                                   | Sub-selection of the merged fields.                                                             |
+| `union`, `discriminatedUnion` of objects                                                                    | One `... on TypeName { ... }` inline fragment per member; see below.                            |
 | `optional`, `nullable`, `nonoptional`, `default`, `prefault`, `catch`, `readonly`, `promise`, `lazy`, brand | Looked through to the inner schema.                                                             |
 | `transform`, `pipe`                                                                                         | The pipe's input, which is what the server sends. For `z.preprocess` the output schema is used. |
 | `string`, `number`, `boolean`, `bigint`, `date`, `enum`, `literal`, `templateLiteral`                       | Selected by name (a scalar or enum on the server).                                              |
 | `record`, `map`, `any`, `unknown`, `custom`, tuples of scalars                                              | Selected by name, as an opaque scalar such as `JSON`.                                           |
 | `nan`, `void`, `undefined`, `never`, `null`, `symbol`, `file`, bare `z.transform`, tuples holding objects   | Throw: nothing of that type can come back in a GraphQL response.                                |
+
+### Unions
+
+A GraphQL union is selected through inline fragments, which need each member's type name. zod2gql takes it from `.describe()`, the same place the root field name comes from:
+
+```ts
+const Cat = z.object({ meows: z.boolean() }).describe('Cat');
+const Dog = z.object({ barks: z.boolean() }).describe('Dog');
+
+toGQL(z.object({ id: z.string(), pet: z.union([Cat, Dog]) }).describe('Owner'));
+```
+
+```graphql
+query {
+  owner {
+    id
+    pet {
+      ... on Cat {
+        meows
+      }
+      ... on Dog {
+        barks
+      }
+    }
+  }
+}
+```
+
+An object member without a name throws. `null` and `undefined` members only make the field nullable, so `z.union([Cat, z.null()])` selects `Cat`'s fields directly. A union of scalars is selected by name. A union that mixes objects and scalars throws, since a GraphQL union holds only object types.
 
 ## Errors
 
