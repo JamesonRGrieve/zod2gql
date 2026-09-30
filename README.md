@@ -69,6 +69,12 @@ toGQL(z.array(User)); // query { users { ... } }
 
 Optional and nullable wrappers are looked through, so `z.object({...}).nullable().optional()` still yields a sub-selection.
 
+## Errors
+
+A schema that cannot become a valid GraphQL document throws a `GQLSchemaError` instead of rendering broken output. Its message and its `path` property name the field where rendering stopped, starting from the operation's root field (`user.team.display-name`).
+
+Field names, variable names, the operation name and the root field name must be GraphQL names, matching `/^[_A-Za-z][_0-9A-Za-z]*$/`: no hyphens, spaces, leading digits or non-ASCII letters. GraphQL has no reserved words, so fields called `query`, `type`, `on` or `fragment` are fine. The root field comes from `operationName` or from the schema's `.describe()` name; if neither gives one, rendering throws.
+
 ## License
 
 AGPL-3.0-or-later

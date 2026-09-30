@@ -16,6 +16,7 @@ import {
   processArraySubscription,
   processFields,
 } from './core';
+import { GQLSchemaError } from './errors';
 import { createMutation, processMutation } from './mutation';
 import { createQuery, processQuery } from './query';
 import { createSubscription, processSubscription } from './subscription';
@@ -23,6 +24,7 @@ import { createSubscription, processSubscription } from './subscription';
 export {
   type AnyObjectSchema,
   type AnySchema,
+  GQLSchemaError,
   GQLType,
   type GraphQLVariableValue,
   type ToGQLOptions,

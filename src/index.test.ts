@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest';
 import { z } from 'zod';
 import {
+  GQLSchemaError,
   GQLType,
   formatFieldArguments,
   formatVariablesDeclaration,
@@ -194,6 +195,49 @@ describe('toGQL routing', () => {
     const q = toGQL(schema, GQLType.Subscription);
     expect(q).toContain('subscription');
     expect(q).toContain('notification');
+  });
+});
+
+describe('toGQL name validation', () => {
+  it('selects fields named after GraphQL keywords, which are legal field names', () => {
+    const schema = z
+      .object({ query: z.string(), type: z.string(), on: z.string(), fragment: z.object({ enum: z.string() }) })
+      .describe('Thing');
+    expect(toGQL(schema)).toBe('query {\n  thing {\n    query\n    type\n    on\n    fragment {\n      enum\n    }\n  }\n}');
+  });
+
+  it('rejects a hyphenated field and names its path', () => {
+    const schema = z.object({ team: z.object({ 'display-name': z.string() }) }).describe('User');
+    expect(() => toGQL(schema)).toThrow(GQLSchemaError);
+    expect(() => toGQL(schema)).toThrow('zod2gql: user.team.display-name: field "display-name" is not a valid GraphQL name');
+  });
+
+  it.each(['first name', '1st', 'naïve'])('rejects the field name %j', (name) => {
+    const schema = z.object({ [name]: z.string() }).describe('User');
+    expect(() => toGQL(schema)).toThrow(`field ${JSON.stringify(name)} is not a valid GraphQL name`);
+  });
+
+  it('rejects an invalid operationName', () => {
+    const schema = z.object({ id: z.string() }).describe('User');
+    expect(() => toGQL(schema, GQLType.Query, { operationName: 'Get-User' })).toThrow(
+      'operationName "Get-User" is not a valid GraphQL name',
+    );
+  });
+
+  it('rejects a description that is not a usable field name', () => {
+    const schema = z.object({ id: z.string() }).describe('User profile');
+    expect(() => toGQL(schema)).toThrow('operation field "user profile" is not a valid GraphQL name');
+  });
+
+  it('rejects a schema whose root field cannot be named', () => {
+    expect(() => toGQL(z.object({ id: z.string() }))).toThrow("cannot derive the operation's root field name");
+  });
+
+  it('rejects an invalid variable name', () => {
+    const schema = z.object({ id: z.string() }).describe('User');
+    expect(() => toGQL(schema, GQLType.Query, { variables: { 'user-id': '1' } })).toThrow(
+      'variable "user-id" is not a valid GraphQL name',
+    );
   });
 });
 

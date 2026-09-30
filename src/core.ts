@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 import { z } from 'zod';
+import { GQLSchemaError, assertGraphQLName } from './errors';
 
 // Define an enum for GraphQL operation types
 export enum GQLType {
@@ -110,6 +111,15 @@ const inferGraphQLType = (key: string, val: GraphQLVariableValue | undefined): s
   return 'String';
 };
 
+/** Variable entries, each name checked as a GraphQL name since it is emitted as `$name` and as an argument name. */
+const variableEntries = (variables: Record<string, GraphQLVariableValue>): Array<[string, GraphQLVariableValue]> => {
+  const entries = Object.entries(variables);
+  for (const [key] of entries) {
+    assertGraphQLName(key, 'variable', []);
+  }
+  return entries;
+};
+
 // Format variables declaration for GraphQL
 export const formatVariablesDeclaration = (
   variables?: Record<string, GraphQLVariableValue>,
@@ -121,7 +131,7 @@ export const formatVariablesDeclaration = (
 
   const inputTypes = new Map(Object.entries(inputTypeMap ?? {}));
 
-  return `(${Object.entries(variables)
+  return `(${variableEntries(variables)
     .map(([key, value]) => {
       const mapped = inputTypes.get(key);
       if (mapped !== undefined && mapped !== '') {
@@ -138,36 +148,14 @@ export const formatFieldArguments = (variables?: Record<string, GraphQLVariableV
     return '';
   }
 
-  return `(${Object.entries(variables)
+  return `(${variableEntries(variables)
     .map(([key]) => `${key}: $${key}`)
     .join(', ')})`;
 };
 
-const renderField = (
-  fieldSchema: AnySchema,
-  fieldName: string,
-  queryType: GQLType,
-  options: ToGQLOptions,
-  depth: number,
-  indent: string,
-): string => {
-  const unwrappedSchema = unwrapOptionality(fieldSchema);
-
-  if (isZodObject(unwrappedSchema)) {
-    return `${indent}${fieldName} {\n${processFields(unwrappedSchema, queryType, options, depth + 1)}${indent}}\n`;
-  }
-  if (isZodArray(unwrappedSchema)) {
-    const elementType = unwrapOptionality(unwrappedSchema.element);
-    if (isZodObject(elementType)) {
-      return `${indent}${fieldName} {\n${processFields(elementType, queryType, options, depth + 1)}${indent}}\n`;
-    }
-  }
-  return `${indent}${fieldName}\n`;
-};
-
 const DEFAULT_MAX_DEPTH = 10;
 
-export function processFields(schema: AnyObjectSchema, queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string {
+function renderFields(schema: AnyObjectSchema, options: ToGQLOptions, depth: number, path: readonly string[]): string {
   const { maxDepth = DEFAULT_MAX_DEPTH } = options;
 
   if (depth > maxDepth) {
@@ -178,10 +166,38 @@ export function processFields(schema: AnyObjectSchema, queryType: GQLType, optio
   let query = '';
 
   for (const [key, value] of Object.entries(schema.shape)) {
-    query += renderField(value, key, queryType, options, depth, indent);
+    query += renderField(value, key, options, depth, indent, [...path, key]);
   }
 
   return query;
+}
+
+function renderField(
+  fieldSchema: AnySchema,
+  fieldName: string,
+  options: ToGQLOptions,
+  depth: number,
+  indent: string,
+  path: readonly string[],
+): string {
+  assertGraphQLName(fieldName, 'field', path);
+  const unwrappedSchema = unwrapOptionality(fieldSchema);
+
+  if (isZodObject(unwrappedSchema)) {
+    return `${indent}${fieldName} {\n${renderFields(unwrappedSchema, options, depth + 1, path)}${indent}}\n`;
+  }
+  if (isZodArray(unwrappedSchema)) {
+    const elementType = unwrapOptionality(unwrappedSchema.element);
+    if (isZodObject(elementType)) {
+      return `${indent}${fieldName} {\n${renderFields(elementType, options, depth + 1, path)}${indent}}\n`;
+    }
+  }
+  return `${indent}${fieldName}\n`;
+}
+
+/** Render the selection set of `schema` at indent level `depth`. `queryType` does not change the selection. */
+export function processFields(schema: AnyObjectSchema, _queryType: GQLType, options: ToGQLOptions = {}, depth = 0): string {
+  return renderFields(schema, options, depth, []);
 }
 
 /** Indent level of the selection set under an operation's root field (`query { field { <here> } }`). */
@@ -199,11 +215,22 @@ export const renderOperation = (
   options: ToGQLOptions,
 ): string => {
   const { operationName, variables, inputTypeMap } = options;
-  const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
+  const hasOperationName = operationName !== undefined && operationName !== '';
+  if (hasOperationName) {
+    assertGraphQLName(operationName, 'operationName', []);
+  }
+  const operation = hasOperationName ? ` ${operationName}` : '';
   const varsString = formatVariablesDeclaration(variables, inputTypeMap);
   const fieldArgs = formatFieldArguments(variables);
   const fieldName = getOperationFieldName(rootSchema, operationName);
-  const selection = processFields(selectionSchema, queryType, options, OPERATION_SELECTION_INDENT);
+  if (fieldName === '') {
+    throw new GQLSchemaError(
+      [],
+      "cannot derive the operation's root field name; pass operationName or name the schema with .describe('TypeName')",
+    );
+  }
+  assertGraphQLName(fieldName, 'operation field', []);
+  const selection = renderFields(selectionSchema, options, OPERATION_SELECTION_INDENT, [fieldName]);
   return `${queryType}${operation}${varsString} {\n  ${fieldName}${fieldArgs} {\n${selection}  }\n}`;
 };
 
