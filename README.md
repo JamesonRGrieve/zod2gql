@@ -69,6 +69,19 @@ toGQL(z.array(User)); // query { users { ... } }
 
 Optional and nullable wrappers are looked through, so `z.object({...}).nullable().optional()` still yields a sub-selection.
 
+## How Zod types map
+
+| Zod                                                                                                         | Selection                                                                                       |
+| ----------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| `object`                                                                                                    | Sub-selection of its fields.                                                                    |
+| `array`, `set`                                                                                              | Whatever the element selects; lists need no extra syntax.                                       |
+| `intersection` of objects                                                                                   | Sub-selection of the merged fields.                                                             |
+| `optional`, `nullable`, `nonoptional`, `default`, `prefault`, `catch`, `readonly`, `promise`, `lazy`, brand | Looked through to the inner schema.                                                             |
+| `transform`, `pipe`                                                                                         | The pipe's input, which is what the server sends. For `z.preprocess` the output schema is used. |
+| `string`, `number`, `boolean`, `bigint`, `date`, `enum`, `literal`, `templateLiteral`                       | Selected by name (a scalar or enum on the server).                                              |
+| `record`, `map`, `any`, `unknown`, `custom`, tuples of scalars                                              | Selected by name, as an opaque scalar such as `JSON`.                                           |
+| `nan`, `void`, `undefined`, `never`, `null`, `symbol`, `file`, bare `z.transform`, tuples holding objects   | Throw: nothing of that type can come back in a GraphQL response.                                |
+
 ## Errors
 
 A schema that cannot become a valid GraphQL document throws a `GQLSchemaError` instead of rendering broken output. Its message and its `path` property name the field where rendering stopped, starting from the operation's root field (`user.team.display-name`).

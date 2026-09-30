@@ -27,6 +27,101 @@ describe('renderSelectionSet: shape', () => {
   });
 });
 
+describe('renderSelectionSet: leaf types', () => {
+  it.each([
+    ['string', z.string()],
+    ['email format', z.email()],
+    ['int', z.int()],
+    ['number', z.number()],
+    ['boolean', z.boolean()],
+    ['bigint', z.bigint()],
+    ['date', z.date()],
+    ['enum', z.enum(['A', 'B'])],
+    ['literal', z.literal('fixed')],
+    ['numeric literal', z.literal(3)],
+    ['template literal', z.templateLiteral(['id-', z.number()])],
+    ['record', z.record(z.string(), z.object({ id: z.string() }))],
+    ['map', z.map(z.string(), z.number())],
+    ['any', z.any()],
+    ['unknown', z.unknown()],
+    ['custom', z.custom<{ bytes: number }>()],
+    ['instanceof', z.instanceof(Error)],
+    ['branded', z.string().brand<'UserId'>()],
+    ['array of scalars', z.array(z.string())],
+    ['set of scalars', z.set(z.number())],
+    ['tuple of scalars', z.tuple([z.number(), z.number()])],
+    ['tuple with a rest', z.tuple([z.string()], z.number())],
+    ['intersection of scalars', z.intersection(z.string(), z.string().min(1))],
+  ])('selects a %s field by name', (_label, fieldSchema) => {
+    expect(render(z.object({ value: fieldSchema }))).toBe('value\n');
+  });
+});
+
+describe('renderSelectionSet: wrappers', () => {
+  const Team = z.object({ id: z.string() });
+
+  it.each([
+    ['default', Team.default({ id: 'none' })],
+    ['prefault', Team.prefault({ id: 'none' })],
+    ['catch', Team.catch({ id: 'none' })],
+    ['readonly', Team.readonly()],
+    ['nonoptional', Team.optional().nonoptional()],
+    ['promise', z.promise(Team)],
+    ['transform', Team.transform((team) => team.id)],
+    ['pipe', Team.pipe(z.object({ id: z.string() }))],
+    ['preprocess', z.preprocess((raw) => raw, Team)],
+    ['set', z.set(Team)],
+    ['lazy', z.lazy(() => Team)],
+  ])('selects through %s to the object', (_label, fieldSchema) => {
+    expect(render(z.object({ team: fieldSchema }))).toBe('team {\n  id\n}\n');
+  });
+
+  it('unwraps a defaulted scalar to a plain field', () => {
+    expect(render(z.object({ count: z.number().default(0), tag: z.literal('x').catch('x') }))).toBe('count\ntag\n');
+  });
+
+  it('merges the fields of intersected objects', () => {
+    const Named = z.object({ name: z.string(), owner: z.object({ id: z.string() }) });
+    const Dated = z.object({ createdAt: z.date(), owner: z.object({ email: z.string() }) });
+    expect(render(z.object({ doc: z.intersection(Named, Dated) }))).toBe(
+      'doc {\n  name\n  owner {\n    id\n    email\n  }\n  createdAt\n}\n',
+    );
+  });
+});
+
+describe('renderSelectionSet: unsupported types', () => {
+  it.each([
+    ['nan', z.nan()],
+    ['void', z.void()],
+    ['undefined', z.undefined()],
+    ['never', z.never()],
+    ['null', z.null()],
+    ['symbol', z.symbol()],
+    ['file', z.file()],
+    ['transform', z.transform((raw: string) => raw.length)],
+  ])('rejects a %s field with a descriptive error', (type, fieldSchema) => {
+    expect(() => render(z.object({ id: z.string(), bad: fieldSchema }))).toThrow(
+      `zod2gql: root.bad: zod type "${type}" has no GraphQL representation`,
+    );
+  });
+
+  it('rejects an unsupported type nested inside a wrapper', () => {
+    expect(() => render(z.object({ bad: z.array(z.never()).optional() }))).toThrow('zod type "never"');
+  });
+
+  it('rejects a tuple that contains an object', () => {
+    expect(() => render(z.object({ pair: z.tuple([z.string(), z.object({ id: z.string() })]) }))).toThrow(
+      'zod2gql: root.pair: a tuple containing objects has no GraphQL form',
+    );
+  });
+
+  it('rejects an intersection of an object with a scalar', () => {
+    expect(() => render(z.object({ odd: z.intersection(z.object({ id: z.string() }), z.string()) }))).toThrow(
+      'zod2gql: root.odd: intersection combines an object with a non-object',
+    );
+  });
+});
+
 describe('renderSelectionSet: maxDepth', () => {
   const chain = z.object({ a: z.object({ b: z.object({ c: z.object({ x: z.string() }) }) }) });
 
