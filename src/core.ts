@@ -184,19 +184,37 @@ export function processFields(schema: AnyObjectSchema, queryType: GQLType, optio
   return query;
 }
 
+/** Indent level of the selection set under an operation's root field (`query { field { <here> } }`). */
+const OPERATION_SELECTION_INDENT = 2;
+
+/**
+ * Render a complete operation: `<type> <name>(<vars>) { <field>(<args>) { <selection> } }`.
+ * `rootSchema` names the operation field; `selectionSchema` supplies the selection set
+ * (the same object for an object schema, the element for an array schema).
+ */
+export const renderOperation = (
+  queryType: GQLType,
+  rootSchema: AnySchema,
+  selectionSchema: AnyObjectSchema,
+  options: ToGQLOptions,
+): string => {
+  const { operationName, variables, inputTypeMap } = options;
+  const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
+  const varsString = formatVariablesDeclaration(variables, inputTypeMap);
+  const fieldArgs = formatFieldArguments(variables);
+  const fieldName = getOperationFieldName(rootSchema, operationName);
+  const selection = processFields(selectionSchema, queryType, options, OPERATION_SELECTION_INDENT);
+  return `${queryType}${operation}${varsString} {\n  ${fieldName}${fieldArgs} {\n${selection}  }\n}`;
+};
+
 const ARRAY_ELEMENT_NOT_OBJECT_ERROR = 'Array element must be a ZodObject';
 
 const processArrayOperation = (schema: z.ZodArray, queryType: GQLType, options: ToGQLOptions): string => {
-  const { operationName, variables } = options;
   const elementSchema = schema.element;
   if (!isZodObject(elementSchema)) {
     throw new Error(ARRAY_ELEMENT_NOT_OBJECT_ERROR);
   }
-  const operation = operationName !== undefined && operationName !== '' ? ` ${operationName}` : '';
-  const varsString = formatVariablesDeclaration(variables, options.inputTypeMap);
-  const fieldArgs = formatFieldArguments(variables);
-  const fieldName = getOperationFieldName(schema, operationName);
-  return `${queryType}${operation}${varsString} {\n  ${fieldName}${fieldArgs} {\n${processFields(elementSchema, queryType, options, 2)}  }\n}`;
+  return renderOperation(queryType, schema, elementSchema, options);
 };
 
 // Process array operations

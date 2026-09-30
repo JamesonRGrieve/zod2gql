@@ -30,6 +30,12 @@ describe('processQuery', () => {
     expect(out).toContain('$ratio: Float!');
   });
 
+  it('declares array variables as list types', () => {
+    const schema = z.object({ id: z.string() });
+    const out = processQuery(schema, { operationName: 'GetUsers', variables: { ids: [1], ratios: [0.5] } });
+    expect(out).toContain('query GetUsers($ids: [Int]!, $ratios: [Float]!)');
+  });
+
   it('threads variables into the field argument list', () => {
     const schema = z.object({ id: z.string() });
     const out = processQuery(schema, {
