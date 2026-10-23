@@ -6,7 +6,7 @@ TypeScript library that converts Zod schemas to GraphQL queries, mutations, and 
 
 Read **before your first edit**:
 
-- `/home/jameson/Source/ai-prompts/typescript.md`
+- SOP _Stack Standards → TypeScript and JavaScript_
 
 ---
 
